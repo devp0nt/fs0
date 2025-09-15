@@ -559,7 +559,6 @@ export class Fs0 {
       await fs.rm(path)
     } catch {}
   }
-
   rmSync(path: string) {
     try {
       fsSync.rmSync(path)
