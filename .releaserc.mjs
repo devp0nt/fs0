@@ -1,21 +1,22 @@
-/**
- * @type {import('semantic-release').GlobalConfig}
- */
 export default {
-  branches: ['main'],
+  branches: [{ name: 'main' }, { name: 'next', prerelease: true }],
   plugins: [
-    '@semantic-release/commit-analyzer', // determines next version based on conventional commits
-    '@semantic-release/release-notes-generator', // generates release notes
-    '@semantic-release/changelog', // updates CHANGELOG.md
-    '@semantic-release/npm', // updates package.json and publishes to npm
-    '@semantic-release/github', // creates GitHub Release
+    '@semantic-release/commit-analyzer',
+    '@semantic-release/release-notes-generator',
+    '@semantic-release/changelog',
+    '@semantic-release/npm',
+    '@semantic-release/github',
     [
-      '@semantic-release/git', // commits back package.json + CHANGELOG.md
+      '@semantic-release/git',
       {
         assets: ['package.json', 'CHANGELOG.md'],
-        // biome-ignore lint/suspicious/noTemplateCurlyInString: <it is ok, here>
         message: 'chore(release): ${nextRelease.version} [skip ci]',
       },
     ],
   ],
+  pluginOptionsByBranch: {
+    next: {
+      '@semantic-release/git': false,
+    },
+  },
 }

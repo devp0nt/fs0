@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, next]
   pull_request:
-    branches: [main]
+    branches: [main, next]
 
 permissions:
   contents: write # <-- allows pushing tags/commits
@@ -88,7 +88,8 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: >
-      github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]')
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/next') &&
+      !contains(github.event.head_commit.message, '[skip ci]')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
