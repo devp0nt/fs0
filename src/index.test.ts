@@ -129,9 +129,14 @@ describe(TEST_FORMAT || '', () => {
     it('should handle string matching', () => {
       const testString = 'Hello World Test'
 
-      expect(Fs0.isStringMatch(testString, 'World')).toBe(true)
+      expect(Fs0.isStringMatch(testString, 'World')).toBe(false)
+      expect(Fs0.isStringMatch(testString, 'World*')).toBe(false)
+      expect(Fs0.isStringMatch(testString, '*World*')).toBe(true)
+      expect(Fs0.isStringMatch(testString, 'Hello World Test*')).toBe(true)
+      expect(Fs0.isStringMatch(testString, 'Hello World Tes?*')).toBe(true)
+      expect(Fs0.isStringMatch(testString, 'Hello World Test?*')).toBe(false)
       expect(Fs0.isStringMatch(testString, 'Universe')).toBe(false)
-      expect(Fs0.isStringMatch(testString, ['Hello', 'Test'])).toBe(true)
+      expect(Fs0.isStringMatch(testString, ['Hello', 'Test'])).toBe(false)
       expect(Fs0.isStringMatch(testString, /World/)).toBe(true)
     })
   })

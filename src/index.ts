@@ -7,6 +7,7 @@ import CommentJson from 'comment-json'
 import dotenv from 'dotenv'
 import { findUp, findUpSync } from 'find-up'
 import { type Options as GlobbyOptions, globby, globbySync } from 'globby'
+import isGlob from 'is-glob'
 import { createJiti, type JitiOptions } from 'jiti'
 import uniq from 'lodash/uniq.js'
 import micromatch from 'micromatch'
@@ -61,13 +62,17 @@ export class Fs0 {
     }
     if (typeof search === 'string') {
       // if string contains glob patterns, check via micromatch
-      if (/[?*]/.test(search)) {
+      if (Fs0.isGlob(search)) {
         return micromatch.isMatch(str, search)
       }
       return str === search
     }
     // here goes RegExp
     return search.test(str)
+  }
+
+  static isGlob = (str: Fs0.PathOrPaths): boolean => {
+    return Array.isArray(str) ? str.some((item) => isGlob(item)) : isGlob(str)
   }
 
   async glob(
