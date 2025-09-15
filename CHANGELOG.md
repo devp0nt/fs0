@@ -1,3 +1,10 @@
+## [1.0.6](https://github.com/devp0nt/fs0/compare/v1.0.5...v1.0.6) (2025-09-15)
+
+
+### Bug Fixes
+
+* fix jiti default import ([92443ee](https://github.com/devp0nt/fs0/commit/92443eefd96673b9022075804168f1a495782d38))
+
 ## [1.0.5](https://github.com/devp0nt/fs0/compare/v1.0.4...v1.0.5) (2025-09-15)
 
 
