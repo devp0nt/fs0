@@ -59,7 +59,6 @@ describe(TEST_FORMAT || '', () => {
       const fs = Fs0.create({ cwd: testDir })
       const testContent = 'Hello, World!'
       const testFile = 'test.txt'
-
       await fs.writeFile(testFile, testContent)
       const content = await fs.readFile(testFile)
 
