@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/devp0nt/fs0/compare/v1.0.1...v1.0.2) (2025-09-15)
+
+
+### Bug Fixes
+
+* test fix ([3e6397e](https://github.com/devp0nt/fs0/commit/3e6397e6c3866e8b3f79a1a6fcc6766fe4e506d3))
+
 ## [1.0.1](https://github.com/devp0nt/fs0/compare/v1.0.0...v1.0.1) (2025-09-15)
 
 
