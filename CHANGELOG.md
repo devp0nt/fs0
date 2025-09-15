@@ -1,3 +1,11 @@
+## [1.0.7](https://github.com/devp0nt/fs0/compare/v1.0.6...v1.0.7) (2025-09-15)
+
+
+### Bug Fixes
+
+* fix import default type ([fe98e60](https://github.com/devp0nt/fs0/commit/fe98e6062e3f132ec21d28dc33521fb7b6a9030c))
+* fix tests ([cac632d](https://github.com/devp0nt/fs0/commit/cac632d32d4d2dd4c97b736093ced6127e59db63))
+
 ## [1.0.6](https://github.com/devp0nt/fs0/compare/v1.0.5...v1.0.6) (2025-09-15)
 
 
