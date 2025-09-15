@@ -60,7 +60,7 @@ jobs:
           - 1.0.0
           - latest
         skip:
-          - ${{ contains(github.event.head_commit.message, '--skip-ci') }}
+          - ${{ contains(github.event.head_commit.message, '--skip-test') }}
         exclude:
           - { skip: true }
 
