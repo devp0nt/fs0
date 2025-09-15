@@ -128,7 +128,6 @@ describe(TEST_FORMAT || '', () => {
 
     it('should handle string matching', () => {
       const testString = 'Hello World Test'
-
       expect(Fs0.isStringMatch(testString, 'World')).toBe(false)
       expect(Fs0.isStringMatch(testString, 'World*')).toBe(false)
       expect(Fs0.isStringMatch(testString, '*World*')).toBe(true)
