@@ -57,7 +57,7 @@ describe('Fs0', () => {
     writeFileSync(join(testDir, 'file2.js'), '')
     writeFileSync(join(testDir, 'file3.ts'), '')
 
-    const tsFiles = await fs.findFilesPaths('*.ts')
+    const tsFiles = await fs.glob('*.ts')
     expect(tsFiles).toHaveLength(2)
     expect(tsFiles.every((file) => file.endsWith('.ts'))).toBe(true)
   })
