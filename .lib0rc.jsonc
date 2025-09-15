@@ -1,0 +1,6 @@
+{
+  "scope": "devp0nt",
+  "name": "fs0",
+  "description": "A powerful file system utility library with TypeScript support, glob patterns, and advanced file operations",
+  "keywords": ["filesystem", "fs", "file", "utility", "typescript", "glob"]
+}
