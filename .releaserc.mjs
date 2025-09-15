@@ -17,6 +17,7 @@ module.exports = async () => {
     '@semantic-release/git',
     {
       assets: ['package.json', 'CHANGELOG.md'],
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: <it is ok, here>
       message: 'chore(release): ${nextRelease.version} [skip ci]',
     },
   ]
