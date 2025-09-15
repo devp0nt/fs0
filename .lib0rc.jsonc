@@ -3,6 +3,6 @@
   "name": "fs0",
   "authorName": "Sergei Dmitriev",
   "authorUrl": "https://p0nt.dev",
-  "description": "A powerful file system utility library with TypeScript support, glob patterns, and advanced file operations",
+  "description": "File system helpers for libraries",
   "keywords": ["filesystem", "fs", "file", "utility", "typescript", "glob"]
 }

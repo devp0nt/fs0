@@ -386,13 +386,13 @@ export class Fs0 {
   }
 
   writeFileSync(path: string, content: string, format: boolean = false) {
-    fsSync.writeFileSync(this.normalizePath(path), content)
+    fsSync.writeFileSync(this.toAbs(path), content)
     if (format) {
       this.formatFileSync(path)
     }
   }
   async writeFile(path: string, content: string, format: boolean = false) {
-    path = this.normalizePath(path)
+    path = this.toAbs(path)
     await fs.mkdir(nodePath.dirname(path), { recursive: true })
     await fs.writeFile(path, content)
     if (format) {
@@ -462,16 +462,16 @@ export class Fs0 {
   }
 
   async formatFile(path: string) {
-    path = this.normalizePath(path)
+    path = this.toAbs(path)
     return await Formatter0.format(path, this.formatCommand, this.cwd)
   }
 
   readFileSync(path: string) {
-    return fsSync.readFileSync(this.normalizePath(path), 'utf8')
+    return fsSync.readFileSync(this.toAbs(path), 'utf8')
   }
 
   async readFile(path: string) {
-    return await fs.readFile(this.normalizePath(path), 'utf8')
+    return await fs.readFile(this.toAbs(path), 'utf8')
   }
 
   readJsonSync<T = any>(path: string) {

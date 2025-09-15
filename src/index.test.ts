@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import nodePath, { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { File0, Fs0 } from './index'
+
+const __dirname = nodePath.dirname(fileURLToPath(new URL('.', import.meta.url)))
 
 describe('Fs0', () => {
   const testDir = join(__dirname, 'test-temp')
