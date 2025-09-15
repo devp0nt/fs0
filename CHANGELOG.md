@@ -1,3 +1,19 @@
+## [1.0.8](https://github.com/devp0nt/fs0/compare/v1.0.7...v1.0.8) (2025-09-15)
+
+
+### Bug Fixes
+
+* add next branch ([7a5da1a](https://github.com/devp0nt/fs0/commit/7a5da1acafe06d39b197575b5689b86f7f0fa48d))
+* fix ci ([b496b00](https://github.com/devp0nt/fs0/commit/b496b0057291407c6584ec4f5a393ceed16dae16))
+* fix ci ([1dbedfd](https://github.com/devp0nt/fs0/commit/1dbedfda6eb1fbfc868874d4ec00277b7595e416))
+* fix ci ([e0f2b55](https://github.com/devp0nt/fs0/commit/e0f2b55c74a8d92b667ef0c242da67d58aafa843))
+* fix ci ([18f174a](https://github.com/devp0nt/fs0/commit/18f174a3813ba912ffc2a85007cc4a3bb861c84d))
+* fix ci --skip-test ([345dd6b](https://github.com/devp0nt/fs0/commit/345dd6bb6c246c13a38431b86b84b3364e9774eb))
+* fix ci --skip-test ([21f77ca](https://github.com/devp0nt/fs0/commit/21f77cad628e94c8f7ecebed5efba05626064ce2))
+* fix ci --skip-test ([804b40f](https://github.com/devp0nt/fs0/commit/804b40f72cc6ac9190723ac0cdd4eeba33ab0e0d))
+* fix ci --skip-test ([9df1752](https://github.com/devp0nt/fs0/commit/9df17521cc9cdc220fe2dc495ce2793fe23d9d45))
+* fix ci --skip-test ([22910f1](https://github.com/devp0nt/fs0/commit/22910f1fdad25b4277664dbb3f84172006523492))
+
 ## [1.0.6](https://github.com/devp0nt/fs0/compare/v1.0.5...v1.0.6) (2025-09-15)
 
 
