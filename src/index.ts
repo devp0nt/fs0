@@ -56,14 +56,18 @@ export class Fs0 {
 
   static isStringMatch = (str: string | undefined, search: Fs0.StringMatchInput): boolean => {
     if (!str) return false
-    // TODO: add * pattern in strings
     if (Array.isArray(search)) {
       return search.some((item) => Fs0.isStringMatch(str, item))
-    } else if (typeof search === 'string') {
-      return str.includes(search)
-    } else {
-      return search.test(str)
     }
+    if (typeof search === 'string') {
+      // if string contains glob patterns, check via micromatch
+      if (/[?*]/.test(search)) {
+        return micromatch.isMatch(str, search)
+      }
+      return str === search
+    }
+    // here goes RegExp
+    return search.test(str)
   }
 
   async glob(
