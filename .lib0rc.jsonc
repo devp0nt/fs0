@@ -1,6 +1,8 @@
 {
   "scope": "devp0nt",
   "name": "fs0",
+  "authorName": "Sergei Dmitriev",
+  "authorUrl": "https://p0nt.dev",
   "description": "A powerful file system utility library with TypeScript support, glob patterns, and advanced file operations",
   "keywords": ["filesystem", "fs", "file", "utility", "typescript", "glob"]
 }

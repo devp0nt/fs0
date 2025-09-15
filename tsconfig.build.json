@@ -9,12 +9,5 @@
     "noUnusedParameters": true,
     "types": ["node"]
   },
-  "exclude": [
-    "dist/**/*",
-    "node_modules/**/*",
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/*.test.tsx",
-    "**/*.spec.tsx"
-  ]
+  "exclude": ["dist/**/*", "node_modules/**/*", "**/*.test.ts", "**/*.spec.ts", "**/*.test.tsx", "**/*.spec.tsx"]
 }

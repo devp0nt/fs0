@@ -1,0 +1,77 @@
+{
+  // TODO: forbide uneccessary ! or ? and ifs
+  // TODO: biome restrict imports
+  // TODO: biome rules
+  // TODO: biome hotkeys
+  // TODO: allow emtpy line between imports
+  // TODO: more symbols in line
+  // TODO: quoteStyle single
+  "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    // TODO: try use .gitignore as source of ignores
+    "includes": ["**", "!**/dist", "!**/node_modules", "!**/.react-router", "!**/generated*"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "lineWidth": 120,
+    "indentWidth": 2,
+    "formatWithErrors": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "nursery": {
+        "noFloatingPromises": "error",
+        "noMisusedPromises": "error"
+      },
+      "recommended": true,
+      "style": {
+        "useTemplate": "off",
+        "noProcessEnv": "error"
+      },
+      "correctness": {
+        "noEmptyPattern": "off",
+        "noUnusedFunctionParameters": "off",
+        "noConstructorReturn": "off"
+      },
+      "complexity": {
+        "noUselessThisAlias": "off",
+        "noBannedTypes": "off",
+        "noThisInStatic": "off",
+        "noStaticOnlyClass": "off"
+      },
+      "suspicious": {
+        "noConsole": {
+          "level": "error",
+          "options": {
+            "allow": []
+          }
+        },
+        // "useAwait": "error",
+        "noFocusedTests": "error",
+        "noExplicitAny": "off"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "asNeeded"
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
+}

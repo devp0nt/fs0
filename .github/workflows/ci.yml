@@ -34,7 +34,7 @@ jobs:
         run: bun install
 
       - name: Type check
-        run: bun run typecheck
+        run: bun run types
 
       - name: Run tests
         run: bun test
