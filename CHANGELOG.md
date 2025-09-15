@@ -1,12 +1,3 @@
-## [1.0.7-next.1](https://github.com/devp0nt/fs0/compare/v1.0.6...v1.0.7-next.1) (2025-09-15)
-
-
-### Bug Fixes
-
-* add next branch ([7a5da1a](https://github.com/devp0nt/fs0/commit/7a5da1acafe06d39b197575b5689b86f7f0fa48d))
-* fix import default type ([fe98e60](https://github.com/devp0nt/fs0/commit/fe98e6062e3f132ec21d28dc33521fb7b6a9030c))
-* fix tests ([cac632d](https://github.com/devp0nt/fs0/commit/cac632d32d4d2dd4c97b736093ced6127e59db63))
-
 ## [1.0.6](https://github.com/devp0nt/fs0/compare/v1.0.5...v1.0.6) (2025-09-15)
 
 
