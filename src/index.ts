@@ -571,7 +571,6 @@ export class Fs0 {
       await fs.rmdir(path, { recursive: true })
     } catch {}
   }
-
   rmdirSync(path: string) {
     try {
       fsSync.rmdirSync(path, { recursive: true })
