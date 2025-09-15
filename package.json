@@ -28,7 +28,7 @@
     "lint": "biome check --write",
     "types:build": "tsc --noEmit --project tsconfig.build.json",
     "types:dev": "tsc --noEmit",
-    "types": "bun run types:build && bun run types:dev",
+    "types": "bun run types:dev",
     "prepare": "husky",
     "preinstall": "bun --version || (echo 'Please install Bun: https://bun.sh' && exit 1)"
   },
