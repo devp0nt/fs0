@@ -3,8 +3,6 @@ name: CI
 on:
   push:
     branches: [main, next]
-  pull_request:
-    branches: [main, next]
 
 permissions:
   contents: write # <-- allows pushing tags/commits
@@ -51,49 +49,45 @@ jobs:
   test:
     needs: build
     runs-on: ubuntu-latest
-    if: >
-      !contains(github.event.head_commit.message, '--skip-ci')
     strategy:
       matrix:
-        node-version: [18, 20, 22, 24]
-        bun-version: [1.0.0, latest]
+        node:
+          - 18
+          - 20
+          - 22
+          - 24
+        bun:
+          - 1.0.0
+          - latest
+        skip:
+          - ${{ contains(github.event.head_commit.message, '--skip-test') }}
+        exclude:
+          - { skip: true }
 
     steps:
       - name: Checkout code
-        if: >
-          !contains(github.event.head_commit.message, '--skip-test')
         uses: actions/checkout@v5
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js ${{ matrix.node }}
         uses: actions/setup-node@v5
-        if: >
-          !contains(github.event.head_commit.message, '--skip-test')
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ matrix.node }}
 
-      - name: Setup Bun ${{ matrix.bun-version }}
+      - name: Setup Bun ${{ matrix.bun }}
         uses: oven-sh/setup-bun@v2
-        if: >
-          !contains(github.event.head_commit.message, '--skip-test')
         with:
-          bun-version: ${{ matrix.bun-version }}
+          bun-version: ${{ matrix.bun }}
 
       - name: Download build artifacts
         uses: actions/download-artifact@v5
-        if: >
-          !contains(github.event.head_commit.message, '--skip-test')
         with:
           name: build-files
           path: .
 
       - name: Install dependencies
-        if: >
-          !contains(github.event.head_commit.message, '--skip-test')
         run: bun install
 
       - name: Run tests
-        if: >
-          !contains(github.event.head_commit.message, '--skip-test')
         run: bun test:all
 
   release:
