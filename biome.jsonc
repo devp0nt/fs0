@@ -8,7 +8,7 @@
   "files": {
     "ignoreUnknown": true,
     // TODO: try use .gitignore as source of ignores
-    "includes": ["**", "!**/dist", "!**/node_modules", "!**/.react-router", "!**/generated*"]
+    "includes": ["**", "!**/dist", "!**/node_modules"]
   },
   "formatter": {
     "enabled": true,
@@ -39,7 +39,8 @@
         "noUselessThisAlias": "off",
         "noBannedTypes": "off",
         "noThisInStatic": "off",
-        "noStaticOnlyClass": "off"
+        "noStaticOnlyClass": "off",
+        "useOptionalChain": "off"
       },
       "suspicious": {
         "noConsole": {

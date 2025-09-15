@@ -25,6 +25,9 @@
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
+    "test:build:cjs": "node dist/index.cjs --version || echo 'CJS build test completed'",
+    "test:build:esm": "node --input-type=module -e 'import(\"./dist/index.js\").then(() => console.log(\"ESM build test completed\"))'",
+    "test:build": "bun run test:build:cjs && bun run test:build:esm",
     "lint": "biome check --write",
     "types:build": "tsc --noEmit --project tsconfig.build.json",
     "types:dev": "tsc --noEmit",
@@ -72,6 +75,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.4",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@types/bun": "^1.2.22",
     "@types/lodash": "^4.17.0",
     "@types/micromatch": "^4.0.9",

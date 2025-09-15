@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main]
   pull_request:
-    branches: [main, dev]
+    branches: [main]
 
 jobs:
   test:
@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18, 20, 21]
+        node-version: [18, 20, 22, 24]
         bun-version: [1.0.0, latest]
 
     steps:
@@ -43,9 +43,7 @@ jobs:
         run: bun run build
 
       - name: Test build output
-        run: |
-          node dist/index.cjs --version || echo "CJS build test completed"
-          node --input-type=module -e "import('./dist/index.js').then(() => console.log('ESM build test completed'))"
+        run: bun run test:build
 
   publish:
     needs: test
