@@ -21,7 +21,6 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "publish": "npm publish",
     "test": "bun test",
     "test:esm": "cross-env TEST_FORMAT=esm bun test src/index.test.ts",
     "test:cjs": "cross-env TEST_FORMAT=cjs bun test src/index.test.ts",
