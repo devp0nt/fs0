@@ -1,3 +1,15 @@
+## [1.0.9](https://github.com/devp0nt/fs0/compare/v1.0.8...v1.0.9) (2025-09-15)
+
+
+### Bug Fixes
+
+* fix ci --skip-test ([a2816d8](https://github.com/devp0nt/fs0/commit/a2816d8ec6fea1a71e0fa9633d866b3a2b97edae))
+* fix ci --skip-test ([09ba0dc](https://github.com/devp0nt/fs0/commit/09ba0dc775923e0d51a05c325c7e1487f7fcd97a))
+* fix ci --skip-test ([e83b155](https://github.com/devp0nt/fs0/commit/e83b15572cfe05165f87551b8f2b28038e2c9718))
+* fix ci --skip-test ([caa14b2](https://github.com/devp0nt/fs0/commit/caa14b20b2965df6259bf926e805a2b578af830b))
+* fix ci --skip-test ([90f316c](https://github.com/devp0nt/fs0/commit/90f316c770c6f5cd10490defb69a3e74aaad744c))
+* fix ci --skip-test ([948e335](https://github.com/devp0nt/fs0/commit/948e335ed39f58801f4178affa65160a992201e2))
+
 ## [1.0.8](https://github.com/devp0nt/fs0/compare/v1.0.7...v1.0.8) (2025-09-15)
 
 
