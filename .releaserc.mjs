@@ -18,12 +18,12 @@ export default async () => {
     {
       assets: ['package.json', 'CHANGELOG.md'],
       // biome-ignore lint/suspicious/noTemplateCurlyInString: <it is ok, here>
-      message: 'chore(release): ${nextRelease.version} [skip ci]',
+      message: 'chore(release): ${nextRelease.version} --skip-ci',
     },
   ]
 
   return {
-    branches: [{ name: 'main' }, { name: 'next', prerelease: true }],
+    branches: [{ name: 'main' }, { name: 'next', channel: 'next', prerelease: true }],
     plugins: branch === 'main' ? [...basePlugins, gitPlugin] : basePlugins,
   }
 }

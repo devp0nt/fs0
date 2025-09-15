@@ -15,7 +15,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     if: >
-      !contains(github.event.head_commit.message, '[skip ci]')
+      !contains(github.event.head_commit.message, '--skip-ci')
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -52,7 +52,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: >
-      !contains(github.event.head_commit.message, '[skip ci]')
+      !contains(github.event.head_commit.message, '--skip-ci')
+      && !contains(github.event.head_commit.message, '--skip-test')
     strategy:
       matrix:
         node-version: [18, 20, 22, 24]
@@ -89,7 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/next') &&
-      !contains(github.event.head_commit.message, '[skip ci]')
+      !contains(github.event.head_commit.message, '--skip-ci')
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
