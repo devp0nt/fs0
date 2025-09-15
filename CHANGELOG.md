@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/devp0nt/fs0/compare/v1.0.3...v1.0.4) (2025-09-15)
+
+
+### Bug Fixes
+
+* fix npm pkg files ([b718040](https://github.com/devp0nt/fs0/commit/b7180402ad9372eb348b5cb5707251a0b512be5c))
+
 ## [1.0.3](https://github.com/devp0nt/fs0/compare/v1.0.2...v1.0.3) (2025-09-15)
 
 
