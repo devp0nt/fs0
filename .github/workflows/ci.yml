@@ -50,22 +50,21 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        include: >
-          ${{ fromJSON(
-            contains(github.event.head_commit.message, '--skip-test') 
-              && '[]'
-              || '[
-                    {"node":18,"bun":"1.0.0"},
-                    {"node":20,"bun":"1.0.0"},
-                    {"node":22,"bun":"1.0.0"},
-                    {"node":24,"bun":"1.0.0"},
-                    {"node":18,"bun":"latest"},
-                    {"node":20,"bun":"latest"},
-                    {"node":22,"bun":"latest"},
-                    {"node":24,"bun":"latest"}
-                  ]'
-          ) }}
+      matrix: >
+        ${{ fromJSON(
+          contains(github.event.head_commit.message, '--skip-test') 
+            && '[]'
+            || '[
+                  {"node":18,"bun":"1.0.0"},
+                  {"node":20,"bun":"1.0.0"},
+                  {"node":22,"bun":"1.0.0"},
+                  {"node":24,"bun":"1.0.0"},
+                  {"node":18,"bun":"latest"},
+                  {"node":20,"bun":"latest"},
+                  {"node":22,"bun":"latest"},
+                  {"node":24,"bun":"latest"}
+                ]'
+        ) }}
 
     steps:
       - name: Checkout code
