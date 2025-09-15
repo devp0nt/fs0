@@ -548,7 +548,7 @@ export class Fs0 {
     return dotenv.config({ path: this.findUpSync(filename) }).parsed as Record<string, string>
   }
 
-  async import<T = any>(path: string, options?: JitiOptions): Promise<T> {
+  async import<T = unknown>(path: string, options?: JitiOptions): Promise<T> {
     path = this.toAbs(path)
     const jiti = createJiti(import.meta.url, { ...options })
     return await jiti.import(path)
