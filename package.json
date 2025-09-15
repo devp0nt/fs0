@@ -1,6 +1,6 @@
 {
   "name": "@devp0nt/fs0",
-  "version": "1.0.7",
+  "version": "0.0.0-next",
   "description": "File system helpers for libraries",
   "type": "module",
   "main": "./dist/index.cjs",
