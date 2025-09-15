@@ -1,15 +1,15 @@
-import { exec, execSync } from "node:child_process"
-import fsSync from "node:fs"
-import fs from "node:fs/promises"
-import nodePath from "node:path"
-import readline from "node:readline"
-import CommentJson from "comment-json"
-import dotenv from "dotenv"
-import { findUp, findUpSync } from "find-up"
-import { type Options as GlobbyOptions, globby, globbySync } from "globby"
-import { createJiti } from "jiti"
-import uniq from "lodash/uniq.js"
-import micromatch from "micromatch"
+import { exec, execSync } from 'node:child_process'
+import fsSync from 'node:fs'
+import fs from 'node:fs/promises'
+import nodePath from 'node:path'
+import readline from 'node:readline'
+import CommentJson from 'comment-json'
+import dotenv from 'dotenv'
+import { findUp, findUpSync } from 'find-up'
+import { type Options as GlobbyOptions, globby, globbySync } from 'globby'
+import { createJiti } from 'jiti'
+import uniq from 'lodash/uniq.js'
+import micromatch from 'micromatch'
 
 // TODO: При импорте файла через джити находить ближайший тсконфиг и тянуть из него paths чтобы разрезолвить алиасы абсолютно, и вообще вторым аргументом любые настройкли джити
 // TODO: убрать importDefualt, путсь черехз настройки управляется
@@ -20,18 +20,18 @@ export class Fs0 {
   formatCommand: string | undefined
 
   private constructor(input: Fs0.CreateFsInput = {}) {
-    if ("fileDir" in input && input.fileDir) {
+    if ('fileDir' in input && input.fileDir) {
       this.cwd = input.fileDir
-    } else if ("filePath" in input && input.filePath) {
+    } else if ('filePath' in input && input.filePath) {
       this.cwd = nodePath.dirname(input.filePath)
-    } else if ("cwd" in input && input.cwd) {
+    } else if ('cwd' in input && input.cwd) {
       this.cwd = input.cwd
     } else {
       this.cwd = process.cwd()
     }
     this.rootDir = input.rootDir || this.cwd
-    if (!this.rootDir.startsWith("/")) {
-      throw new Error("Root dir must be absolute")
+    if (!this.rootDir.startsWith('/')) {
+      throw new Error('Root dir must be absolute')
     }
     this.cwd = nodePath.resolve(this.rootDir, this.cwd)
     this.formatCommand = input.formatCommand
@@ -41,11 +41,11 @@ export class Fs0 {
   }
   createFs0(input: Fs0.CreateFsInput = {}) {
     let cwd: undefined | string
-    if ("fileDir" in input && input.fileDir) {
+    if ('fileDir' in input && input.fileDir) {
       cwd = this.resolve(input.fileDir)
-    } else if ("filePath" in input && input.filePath) {
+    } else if ('filePath' in input && input.filePath) {
       cwd = this.resolve(nodePath.dirname(input.filePath))
-    } else if ("cwd" in input && input.cwd) {
+    } else if ('cwd' in input && input.cwd) {
       cwd = this.resolve(input.cwd)
     }
     const rootDir = this.resolve(input.rootDir || this.rootDir)
@@ -63,7 +63,7 @@ export class Fs0 {
     if (!str) return false
     if (Array.isArray(search)) {
       return search.some((item) => Fs0.isStringMatch(str, item))
-    } else if (typeof search === "string") {
+    } else if (typeof search === 'string') {
       return str.includes(search)
     } else {
       return search.test(str)
@@ -90,21 +90,21 @@ export class Fs0 {
         },
   ): Promise<string[]> {
     const { cwd, glob, relative } = (() => {
-      if (typeof input === "string" || Array.isArray(input)) {
+      if (typeof input === 'string' || Array.isArray(input)) {
         return {
           cwd: this.rootDir,
           glob: this.toPaths(input),
           relative: undefined,
         }
       }
-      if (typeof input === "object" && input !== null) {
+      if (typeof input === 'object' && input !== null) {
         return {
           cwd: input.cwd || this.rootDir,
           glob: this.toPaths(input.glob),
           relative: input.relative,
         }
       }
-      throw new Error("Invalid input")
+      throw new Error('Invalid input')
     })()
     const paths = await globby(glob, {
       cwd,
@@ -141,21 +141,21 @@ export class Fs0 {
         },
   ): string[] {
     const { cwd, glob, relative } = (() => {
-      if (typeof input === "string" || Array.isArray(input)) {
+      if (typeof input === 'string' || Array.isArray(input)) {
         return {
           cwd: this.rootDir,
           glob: this.toPaths(input),
           relative: undefined,
         }
       }
-      if (typeof input === "object" && input !== null) {
+      if (typeof input === 'object' && input !== null) {
         return {
           cwd: input.cwd || this.rootDir,
           glob: this.toPaths(input.glob),
           relative: input.relative,
         }
       }
-      throw new Error("Invalid input")
+      throw new Error('Invalid input')
     })()
     const paths = globbySync(glob, {
       cwd,
@@ -247,20 +247,20 @@ export class Fs0 {
     const pathNormalized = this.normalizePath(path)
     return new Promise((resolve, reject) => {
       const stream = fsSync.createReadStream(pathNormalized, {
-        encoding: "utf8",
+        encoding: 'utf8',
       })
       const rl = readline.createInterface({ input: stream })
       let found = false
-      rl.on("line", (line) => {
+      rl.on('line', (line) => {
         if (Fs0.isStringMatch(line, search)) {
           found = true
           rl.close()
         }
       })
-      rl.on("close", () => {
+      rl.on('close', () => {
         resolve(found)
       })
-      rl.on("error", (err) => {
+      rl.on('error', (err) => {
         reject(err)
       })
     })
@@ -324,8 +324,8 @@ export class Fs0 {
     if (Array.isArray(path)) {
       return path.map((p) => this.toAbs(p)) as T
     }
-    if (path.startsWith("!")) {
-      const cutted = path.replace(/^!/, "")
+    if (path.startsWith('!')) {
+      const cutted = path.replace(/^!/, '')
       const result = this.toAbs(cutted, relativeToAbs)
       return `!${result}` as T
     }
@@ -336,19 +336,19 @@ export class Fs0 {
   toRel<T extends Fs0.PathOrPaths>(path: T, relativeTo?: string, withLeadingDot?: boolean): T
   toRel<T extends Fs0.PathOrPaths>(path: T, withLeadingDot?: boolean, relativeTo?: string): T
   toRel<T extends Fs0.PathOrPaths>(path: T, first?: any, second?: any): T {
-    const relativeTo = typeof first === "string" ? first : typeof second === "string" ? second : this.cwd
-    const withLeadingDot = typeof first === "boolean" ? first : typeof second === "boolean" ? second : true
+    const relativeTo = typeof first === 'string' ? first : typeof second === 'string' ? second : this.cwd
+    const withLeadingDot = typeof first === 'boolean' ? first : typeof second === 'boolean' ? second : true
     if (Array.isArray(path)) {
       return path.map((p) => this.toRel(p)) as T
     }
-    if (path.startsWith("!")) {
-      const cutted = path.replace(/^!/, "")
+    if (path.startsWith('!')) {
+      const cutted = path.replace(/^!/, '')
       const result = this.toRel(cutted, first, second)
       return `!${result}` as T
     }
     const pathNormalized = this.normalizePath(path)
     const result = nodePath.relative(relativeTo, pathNormalized)
-    if (withLeadingDot && !result.startsWith("../") && !result.startsWith("/") && !result.startsWith("./")) {
+    if (withLeadingDot && !result.startsWith('../') && !result.startsWith('/') && !result.startsWith('./')) {
       return `./${result}` as T
     }
     return result as T
@@ -359,7 +359,7 @@ export class Fs0 {
     const rel = this.toRel(path, relativeTo, false)
     const relDotted = this.toRel(path, relativeTo, true)
     const extDotted = nodePath.extname(path)
-    const ext = extDotted.replace(/^\./, "")
+    const ext = extDotted.replace(/^\./, '')
     const name = nodePath.basename(path)
     const basename = nodePath.basename(path, extDotted)
     const dir = nodePath.dirname(path)
@@ -379,7 +379,7 @@ export class Fs0 {
 
   replaceExt(path: string, ext: string) {
     const originalExt = nodePath.extname(path)
-    if (ext && !ext.startsWith(".")) {
+    if (ext && !ext.startsWith('.')) {
       ext = `.${ext}`
     }
     return path.replace(new RegExp(`${originalExt}$`), ext)
@@ -401,14 +401,14 @@ export class Fs0 {
   }
 
   static sortJson = <T>(content: T, sort: true | string[] | ((content: T) => string[]) = true): T => {
-    if (!content || typeof content !== "object") return content
+    if (!content || typeof content !== 'object') return content
 
     // figure out keys order
     let keys: string[]
     if (sort === true) {
       keys = Object.keys(content).sort()
     } else if (Array.isArray(sort)) {
-      keys = uniq([...sort.map((k) => k.split(".")[0]), ...Object.keys(content)])
+      keys = uniq([...sort.map((k) => k.split('.')[0]), ...Object.keys(content)])
     } else {
       keys = sort(content)
     }
@@ -422,9 +422,9 @@ export class Fs0 {
 
       if (Array.isArray(sort)) {
         // find dotted keys for this property
-        const dottedKeys = sort.filter((k) => k.startsWith(key + ".")).map((k) => k.slice(key.length + 1)) // cut off prefix "key."
+        const dottedKeys = sort.filter((k) => k.startsWith(key + '.')).map((k) => k.slice(key.length + 1)) // cut off prefix "key."
 
-        if (dottedKeys.length > 0 && typeof value === "object" && value !== null) {
+        if (dottedKeys.length > 0 && typeof value === 'object' && value !== null) {
           // recurse inside
           result[key] = Fs0.sortJson(value, dottedKeys)
           continue
@@ -467,11 +467,11 @@ export class Fs0 {
   }
 
   readFileSync(path: string) {
-    return fsSync.readFileSync(this.normalizePath(path), "utf8")
+    return fsSync.readFileSync(this.normalizePath(path), 'utf8')
   }
 
   async readFile(path: string) {
-    return await fs.readFile(this.normalizePath(path), "utf8")
+    return await fs.readFile(this.normalizePath(path), 'utf8')
   }
 
   readJsonSync<T = any>(path: string) {
@@ -546,15 +546,15 @@ export class Fs0 {
   }
 
   normalizePath(path: string): string {
-    if (path.startsWith("!")) {
-      const result = this.normalizePath(path.replace(/^!/, ""))
+    if (path.startsWith('!')) {
+      const result = this.normalizePath(path.replace(/^!/, ''))
       return `!${result}`
     }
     if (/^~\//.test(path)) {
-      return nodePath.resolve(this.rootDir, path.replace(/^~\//, ""))
+      return nodePath.resolve(this.rootDir, path.replace(/^~\//, ''))
     }
     if (/^~[a-zA-Z0-9_-]+/.test(path)) {
-      return nodePath.resolve(this.rootDir, path.replace(/^~/, ""))
+      return nodePath.resolve(this.rootDir, path.replace(/^~/, ''))
     }
     return path
   }
@@ -566,8 +566,8 @@ export class Fs0 {
   isPathMatchGlob(path: string, glob: string | string[]): boolean {
     const pathNormalized = this.normalizePath(path)
     const globNormalized = Array.isArray(glob) ? glob.map(this.normalizePath.bind(this)) : [this.normalizePath(glob)]
-    const negativeGlobs = globNormalized.filter((g) => g.startsWith("!")).map((g) => g.replace(/^!/, ""))
-    const positiveGlobs = globNormalized.filter((g) => !g.startsWith("!"))
+    const negativeGlobs = globNormalized.filter((g) => g.startsWith('!')).map((g) => g.replace(/^!/, ''))
+    const positiveGlobs = globNormalized.filter((g) => !g.startsWith('!'))
     const isMatchPositive = micromatch.isMatch(pathNormalized, positiveGlobs)
     const isMatchNegative = micromatch.isMatch(pathNormalized, negativeGlobs)
     return isMatchPositive && !isMatchNegative
@@ -615,11 +615,11 @@ export class Fs0 {
     return File0.create({ filePath: path, rootDir: this.rootDir })
   }
 
-  async loadEnv(filename: string = ".env"): Promise<Record<string, string>> {
+  async loadEnv(filename: string = '.env'): Promise<Record<string, string>> {
     return dotenv.config({ path: await this.findUp(filename) }).parsed as Record<string, string>
   }
 
-  loadEnvSync(filename: string = ".env"): Record<string, string> {
+  loadEnvSync(filename: string = '.env'): Record<string, string> {
     return dotenv.config({ path: this.findUpSync(filename) }).parsed as Record<string, string>
   }
 
@@ -761,7 +761,7 @@ export class File0 {
   relToDir(fs0: Fs0): string
   relToDir(dir: string): string
   relToDir(input: string | File0 | Fs0) {
-    const dir = typeof input === "string" ? input : input instanceof File0 ? input.path.dir : input.cwd
+    const dir = typeof input === 'string' ? input : input instanceof File0 ? input.path.dir : input.cwd
     const fs0 = this.fs0.createFs0({ cwd: dir })
     return fs0.toRel(this.path.abs)
   }
@@ -891,42 +891,42 @@ export class Formatter0 {
     }
     const tools: Formatter0.Tool[] = []
 
-    const biomeConfigFile0 = await fs0.findUpFile(["biome.json", "biome.jsonc"])
+    const biomeConfigFile0 = await fs0.findUpFile(['biome.json', 'biome.jsonc'])
     if (biomeConfigFile0) {
-      tools.push("biome")
+      tools.push('biome')
     }
     const eslintConfigFile0 = await fs0.findUpFile([
-      "eslint.config.js",
-      "eslint.config.ts",
-      "eslint.config.json",
-      "eslint.config.mjs",
-      "eslint.config.cjs",
+      'eslint.config.js',
+      'eslint.config.ts',
+      'eslint.config.json',
+      'eslint.config.mjs',
+      'eslint.config.cjs',
     ])
     if (eslintConfigFile0) {
-      tools.push("eslint")
+      tools.push('eslint')
     }
     const prettierConfigFile0 = await fs0.findUpFile([
-      "prettier.config.js",
-      "prettier.config.ts",
-      "prettier.config.json",
-      "prettier.config.mjs",
-      "prettier.config.cjs",
+      'prettier.config.js',
+      'prettier.config.ts',
+      'prettier.config.json',
+      'prettier.config.mjs',
+      'prettier.config.cjs',
     ])
     if (prettierConfigFile0) {
-      tools.push("prettier")
+      tools.push('prettier')
     }
     return { tools, biomeConfigFile0, eslintConfigFile0, prettierConfigFile0 }
   }
 
   getPathsString(paths: Fs0.PathOrPaths) {
-    return Array.isArray(paths) ? paths.join(" ") : paths
+    return Array.isArray(paths) ? paths.join(' ') : paths
   }
   getCustomCommand(paths: Fs0.PathOrPaths) {
     if (!this.command) {
-      throw new Error("Command is not set")
+      throw new Error('Command is not set')
     }
-    if (this.command.includes("{{paths}}")) {
-      return this.command.replaceAll("{{paths}}", this.getPathsString(paths))
+    if (this.command.includes('{{paths}}')) {
+      return this.command.replaceAll('{{paths}}', this.getPathsString(paths))
     }
     return `${this.command} ${this.getPathsString(paths)}`
   }
@@ -940,23 +940,23 @@ export class Formatter0 {
     return `prettier --write ${this.getPathsString(paths)}`
   }
   getSequenceCommand(commands: string[]) {
-    return commands.join(" && ")
+    return commands.join(' && ')
   }
   getParallelCommand(commands: string[]) {
-    return commands.join(" & ")
+    return commands.join(' & ')
   }
   getFullSequenceCommand(paths: Fs0.PathOrPaths) {
     if (this.command) {
       return this.getCustomCommand(paths)
     }
     const commands: string[] = []
-    if (this.tools.includes("biome")) {
+    if (this.tools.includes('biome')) {
       commands.push(this.getBiomeCommand(paths))
     }
-    if (this.tools.includes("eslint")) {
+    if (this.tools.includes('eslint')) {
       commands.push(this.getEslintCommand(paths))
     }
-    if (this.tools.includes("prettier")) {
+    if (this.tools.includes('prettier')) {
       commands.push(this.getPrettierCommand(paths))
     }
     return this.getSequenceCommand(commands)
@@ -966,13 +966,13 @@ export class Formatter0 {
       return this.getCustomCommand(paths)
     }
     const commands: string[] = []
-    if (this.tools.includes("biome")) {
+    if (this.tools.includes('biome')) {
       commands.push(this.getBiomeCommand(paths))
     }
-    if (this.tools.includes("eslint")) {
+    if (this.tools.includes('eslint')) {
       commands.push(this.getEslintCommand(paths))
     }
-    if (this.tools.includes("prettier")) {
+    if (this.tools.includes('prettier')) {
       commands.push(this.getPrettierCommand(paths))
     }
     return this.getParallelCommand(commands)
@@ -982,13 +982,13 @@ export class Formatter0 {
   static formatSync(paths: Fs0.PathOrPaths, command?: string, cwd?: string): ReturnType<typeof execSync>
   static formatSync(paths: Fs0.PathOrPaths, command?: string, cwdOrFs0?: string | Fs0) {
     const fs0 = cwdOrFs0 instanceof Fs0 ? cwdOrFs0 : undefined
-    const cwd = typeof cwdOrFs0 === "string" ? cwdOrFs0 : undefined
+    const cwd = typeof cwdOrFs0 === 'string' ? cwdOrFs0 : undefined
     const formatter0 = Formatter0.createByCommand({ command, cwd, fs0 })
     return formatter0.formatSync(paths)
   }
   formatSync(paths: Fs0.PathOrPaths) {
     const command = this.getFullSequenceCommand(paths)
-    return execSync(command, { stdio: "inherit", cwd: this.fs0.cwd })
+    return execSync(command, { stdio: 'inherit', cwd: this.fs0.cwd })
   }
 
   static async format(paths: Fs0.PathOrPaths, command?: string, fs0?: Fs0): Promise<ReturnType<typeof exec>>
@@ -999,7 +999,7 @@ export class Formatter0 {
     cwdOrFs0?: string | Fs0,
   ): Promise<ReturnType<typeof exec>> {
     const fs0 = cwdOrFs0 instanceof Fs0 ? cwdOrFs0 : undefined
-    const cwd = typeof cwdOrFs0 === "string" ? cwdOrFs0 : undefined
+    const cwd = typeof cwdOrFs0 === 'string' ? cwdOrFs0 : undefined
     const formatter0 = await Formatter0.create({ command, cwd, fs0 })
     return await formatter0.format(paths)
   }
@@ -1010,7 +1010,7 @@ export class Formatter0 {
 }
 
 export namespace Formatter0 {
-  export type Tool = "biome" | "eslint" | "prettier"
+  export type Tool = 'biome' | 'eslint' | 'prettier'
   export type CacheItem = {
     cwd: string
     formatter0: Formatter0

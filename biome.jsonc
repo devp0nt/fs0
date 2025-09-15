@@ -1,11 +1,4 @@
 {
-  // TODO: forbide uneccessary ! or ? and ifs
-  // TODO: biome restrict imports
-  // TODO: biome rules
-  // TODO: biome hotkeys
-  // TODO: allow emtpy line between imports
-  // TODO: more symbols in line
-  // TODO: quoteStyle single
   "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
   "vcs": {
     "enabled": false,
@@ -29,7 +22,8 @@
     "rules": {
       "nursery": {
         "noFloatingPromises": "error",
-        "noMisusedPromises": "error"
+        "noMisusedPromises": "error",
+        "noUnnecessaryConditions": "error"
       },
       "recommended": true,
       "style": {
@@ -62,7 +56,7 @@
   },
   "javascript": {
     "formatter": {
-      "quoteStyle": "double",
+      "quoteStyle": "single",
       "semicolons": "asNeeded"
     }
   },
