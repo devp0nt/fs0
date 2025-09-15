@@ -47,7 +47,7 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Test build output
+      - name: Run build tests
         run: bun run test:build
 
   release:
