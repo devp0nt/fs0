@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write # <-- allows pushing tags/commits
+  issues: write # <-- needed for GitHub release notes
+  pull-requests: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
