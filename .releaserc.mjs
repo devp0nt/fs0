@@ -13,6 +13,7 @@ export default {
       '@semantic-release/git', // commits back package.json + CHANGELOG.md
       {
         assets: ['package.json', 'CHANGELOG.md'],
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: <it is ok, here>
         message: 'chore(release): ${nextRelease.version} [skip ci]',
       },
     ],
