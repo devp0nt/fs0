@@ -8,9 +8,12 @@ import dotenv from 'dotenv'
 import { findUp, findUpSync } from 'find-up'
 import { type Options as GlobbyOptions, globby, globbySync } from 'globby'
 import isGlob from 'is-glob'
-import { createJiti, type JitiOptions } from 'jiti'
+import { createJiti, type JitiOptions as JitiOptionsOriginal } from 'jiti'
 import uniq from 'lodash/uniq.js'
 import micromatch from 'micromatch'
+
+// I do not know why they do not include "default" in JitiOptions
+type JitiOptions = JitiOptionsOriginal & { default?: true }
 
 // TODO: При импорте файла через джити находить ближайший тсконфиг и тянуть из него paths чтобы разрезолвить алиасы абсолютно, и вообще вторым аргументом любые настройкли джити
 // TODO: убрать importDefualt, путсь черехз настройки управляется
