@@ -27,6 +27,7 @@
     "test:esm": "cross-env TEST_FORMAT=esm bun test src/index.test.ts",
     "test:cjs": "cross-env TEST_FORMAT=cjs bun test src/index.test.ts",
     "test:build": "bun run test:esm && bun run test:cjs",
+    "test:all": "bun run test && bun run test:build",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
     "lint": "biome check --write",

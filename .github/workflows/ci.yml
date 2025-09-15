@@ -12,7 +12,44 @@ permissions:
   pull-requests: write
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: >
+      !contains(github.event.head_commit.message, '[skip ci]')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Bun latest
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type check
+        run: bun run types
+
+      - name: Build
+        run: bun run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-files
+          path: |
+            dist/
+            package.json
+          retention-days: 1
+
   test:
+    needs: build
     runs-on: ubuntu-latest
     if: >
       !contains(github.event.head_commit.message, '[skip ci]')
@@ -35,20 +72,17 @@ jobs:
         with:
           bun-version: ${{ matrix.bun-version }}
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files
+          path: .
 
-      - name: Type check
-        run: bun run types
+      - name: Install dependencies
+        run: bun install
 
       - name: Run tests
-        run: bun test
-
-      - name: Build
-        run: bun run build
-
-      - name: Run build tests
-        run: bun run test:build
+        run: bun test:all
 
   release:
     needs: test
@@ -72,11 +106,14 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files
+          path: .
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
-
-      - name: Build
-        run: bun run build
 
       - name: Release
         env:
