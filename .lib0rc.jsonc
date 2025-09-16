@@ -2,5 +2,18 @@
   "repoName": "fs0",
   "packageName": "@devp0nt/fs0",
   "description": "File system helpers for libraries",
-  "keywords": ["filesystem", "fs", "file", "utility", "typescript", "glob"]
+  "keywords": [
+    "filesystem",
+    "fs",
+    "file",
+    "utility",
+    "typescript",
+    "glob",
+    "path",
+    "json",
+    "dotenv",
+    "jiti",
+    "exec",
+    "ejs"
+  ]
 }
