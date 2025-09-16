@@ -1,26 +1,33 @@
 const branch = process.env.GITHUB_REF?.replace('refs/heads/', '') || ''
 
-const basePlugins = [
-  '@semantic-release/commit-analyzer',
-  '@semantic-release/release-notes-generator',
-  '@semantic-release/changelog',
-  '@semantic-release/npm',
-  '@semantic-release/github',
-]
-
-const gitPlugin = [
-  '@semantic-release/git',
-  {
-    assets: ['package.json', 'CHANGELOG.md'],
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: <it is ok, here>
-    message: 'chore(release): ${nextRelease.version} --skip-ci',
-  },
-]
-
 /**
  * @type {import('semantic-release').GlobalConfig}
  */
 export default {
   branches: [{ name: 'main' }, { name: 'next', prerelease: true }],
-  plugins: branch === 'main' ? [...basePlugins, gitPlugin] : basePlugins,
+  plugins: [
+    branch === 'next'
+      ? [
+          '@semantic-release/commit-analyzer',
+          {
+            preset: 'conventionalcommits',
+            releaseRules: [{ release: 'patch' }], // в next всегда релиз
+          },
+        ]
+      : ['@semantic-release/commit-analyzer'],
+    branch === 'next'
+      ? []
+      : [
+          '@semantic-release/git',
+          {
+            assets: ['package.json', 'CHANGELOG.md'],
+            // biome-ignore lint/suspicious/noTemplateCurlyInString: <ok>
+            message: 'chore(release): ${nextRelease.version} --skip-ci',
+          },
+        ],
+    '@semantic-release/release-notes-generator',
+    '@semantic-release/changelog',
+    '@semantic-release/npm',
+    '@semantic-release/github',
+  ],
 }
