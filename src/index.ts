@@ -340,6 +340,23 @@ export class Fs0 {
     return Fs0.replaceExt(path, ext)
   }
 
+  mkdirSync<T extends boolean = false>(path: string, crateFs0?: T): T extends true ? Fs0 : undefined {
+    const dirPath = this.toAbs(path)
+    fsSync.mkdirSync(dirPath, { recursive: true })
+    if (crateFs0) {
+      return this.createFs0({ cwd: dirPath }) as T extends true ? Fs0 : undefined
+    }
+    return undefined as T extends true ? Fs0 : undefined
+  }
+  async mkdir<T extends boolean = false>(path: string, crateFs0?: T): Promise<T extends true ? Fs0 : undefined> {
+    const dirPath = this.toAbs(path)
+    await fs.mkdir(dirPath, { recursive: true })
+    if (crateFs0) {
+      return this.createFs0({ cwd: dirPath }) as T extends true ? Fs0 : undefined
+    }
+    return undefined as T extends true ? Fs0 : undefined
+  }
+
   writeFileSync(path: string, content: string, format: boolean = false) {
     fsSync.writeFileSync(this.toAbs(path), content)
     if (format) {
@@ -898,18 +915,24 @@ export class File0 {
   path: Fs0.PathParsed
   fs0: Fs0
 
-  private constructor({ filePath, fs0 }: { filePath: string; fs0: Fs0 }) {
+  private constructor({ filePath, fs0, pathParsed }: { filePath: string; fs0: Fs0; pathParsed?: Fs0.PathParsed }) {
     this.fs0 = fs0
-    this.path = this.fs0.parsePath(filePath)
+    this.path = pathParsed || this.fs0.parsePath(filePath)
   }
 
   static create({ filePath, rootDir, cwd }: { filePath: string; rootDir?: string; cwd?: string }): File0 {
+    const relatedFs0 = cwd
+      ? Fs0.create({
+          rootDir,
+          cwd,
+        })
+      : undefined
+    const pathParsed = relatedFs0 ? relatedFs0.parsePath(filePath) : undefined
     const fs0 = Fs0.create({
-      filePath: cwd ? undefined : filePath,
       rootDir,
-      cwd,
+      filePath,
     })
-    return new File0({ filePath, fs0 })
+    return new File0({ filePath, fs0, pathParsed })
   }
 
   setRootDir(rootDir: string) {
