@@ -354,11 +354,158 @@ export class Fs0 {
     }
   }
 
-  static sortJson = <T>(content: T, sort: true | string[] | ((content: T) => string[]) = true): T => {
-    if (!content || typeof content !== 'object') return content
+  static sortJsonPackageJsonKeys = [
+    'name',
+    'version',
+    'private',
+    'description',
+    'keywords',
+    'license',
+    'author',
+    'contributors',
+    'funding',
+    'homepage',
+    'repository',
+    'bugs',
+    'type',
+    'sideEffects',
+    'main',
+    'module',
+    'types',
+    'typings',
+    'exports',
+    'files',
+    'bin',
+    'man',
+    'directories',
+    'scripts',
+    'config',
+    'dependencies',
+    'peerDependencies',
+    'peerDependenciesMeta',
+    'optionalDependencies',
+    'devDependencies',
+    'bundleDependencies',
+    'bundledDependencies',
+    'engines',
+    'engineStrict',
+    'os',
+    'cpu',
+    'publishConfig',
+    'overrides',
+    'resolutions',
+    'packageManager',
+  ]
+
+  static sortJsonTsconfigCompilerOptionsKeys = [
+    'incremental',
+    'composite',
+    'tsBuildInfoFile',
+    'disableSourceOfProjectReferenceRedirect',
+    'disableSolutionSearching',
+    'disableReferencedProjectLoad',
+    'target',
+    'module',
+    'lib',
+    'jsx',
+    'experimentalDecorators',
+    'emitDecoratorMetadata',
+    'jsxFactory',
+    'jsxFragmentFactory',
+    'jsxImportSource',
+    'reactNamespace',
+    'noLib',
+    'useDefineForClassFields',
+    'moduleDetection',
+    'resolveJsonModule',
+    'baseUrl',
+    'paths',
+    'rootDirs',
+    'rootDir',
+    'typeRoots',
+    'types',
+    'allowUmdGlobalAccess',
+    'moduleResolution',
+    'resolvePackageJsonExports',
+    'resolvePackageJsonImports',
+    'customConditions',
+    'preserveSymlinks',
+    'allowImportingTsExtensions',
+    'noResolve',
+    'traceResolution',
+    'esModuleInterop',
+    'allowSyntheticDefaultImports',
+    'isolatedModules',
+    'verbatimModuleSyntax',
+    'moduleSuffixes',
+    'resolvePackageJsonMain',
+    'declaration',
+    'declarationMap',
+    'emitDeclarationOnly',
+    'sourceMap',
+    'inlineSourceMap',
+    'inlineSources',
+    'outFile',
+    'outDir',
+    'removeComments',
+    'noEmit',
+    'noEmitHelpers',
+    'noEmitOnError',
+    'importsNotUsedAsValues',
+    'downlevelIteration',
+    'importHelpers',
+    'preserveConstEnums',
+    'preserveValueImports',
+    'skipLibCheck',
+    'skipDefaultLibCheck',
+    'stripInternal',
+    'strict',
+    'strictBindCallApply',
+    'strictFunctionTypes',
+    'strictNullChecks',
+    'strictPropertyInitialization',
+    'noImplicitAny',
+    'noImplicitThis',
+    'useUnknownInCatchVariables',
+    'alwaysStrict',
+    'noFallthroughCasesInSwitch',
+    'noUncheckedIndexedAccess',
+    'noImplicitOverride',
+    'noImplicitReturns',
+    'noPropertyAccessFromIndexSignature',
+    'exactOptionalPropertyTypes',
+    'forceConsistentCasingInFileNames',
+    'allowJs',
+    'checkJs',
+    'maxNodeModuleJsDepth',
+    'plugins',
+    'watchOptions',
+    'assumeChangesOnlyAffectDirectDependencies',
+  ]
+
+  static sortJsonTsconfigKeys = [
+    'extends',
+    'files',
+    'include',
+    'exclude',
+    'compilerOptions',
+    ...Fs0.sortJsonTsconfigCompilerOptionsKeys.map((k) => `compilerOptions.${k}`),
+    'references',
+  ]
+
+  static sortJson = <T>(content: T, sort: Fs0.JsonSort<T> = true): T => {
+    if (!content || typeof content !== 'object' || sort === false) return content
     // figure out keys order
     let keys: string[]
-    if (sort === true) {
+    if (typeof sort === 'string') {
+      keys = {
+        packageJson: Fs0.sortJsonPackageJsonKeys,
+        tsconfig: Fs0.sortJsonTsconfigKeys,
+      }[sort]
+      if (!keys) {
+        throw new Error(`Invalid sort preset: ${sort}`)
+      }
+    } else if (sort === true) {
       keys = Object.keys(content).sort()
     } else if (Array.isArray(sort)) {
       keys = uniq([...sort.map((k) => k.split('.')[0]), ...Object.keys(content)])
@@ -385,31 +532,16 @@ export class Fs0 {
     return result as T
   }
 
-  writeJsonSync<T>(
-    path: string,
-    content: T,
-    sort: boolean | string[] | ((content: T) => string[]) = false,
-    format: boolean = false,
-  ) {
+  writeJsonSync<T>(path: string, content: T, sort: Fs0.JsonSort<T> = false, format: boolean = false) {
     const sortedContent = !sort ? content : Fs0.sortJson(content, sort)
     this.writeFileSync(path, CommentJson.stringify(sortedContent, null, 2), format)
   }
-  async writeJson<T>(
-    path: string,
-    content: T,
-    sort: boolean | string[] | ((content: T) => string[]) = false,
-    format: boolean = false,
-  ) {
+  async writeJson<T>(path: string, content: T, sort: Fs0.JsonSort<T> = false, format: boolean = false) {
     const sortedContent = !sort ? content : Fs0.sortJson(content, sort)
     await this.writeFile(path, CommentJson.stringify(sortedContent, null, 2), format)
   }
 
-  writeJsonMergeSync<T>(
-    path: string,
-    content: T,
-    sort: boolean | string[] | ((content: T) => string[]) = false,
-    format: boolean = false,
-  ) {
+  writeJsonMergeSync<T>(path: string, content: T, sort: Fs0.JsonSort<T> = false, format: boolean = false) {
     const file0 = this.createFile0(path)
     const exists = file0.isExistsSync()
     if (!exists) {
@@ -421,12 +553,7 @@ export class Fs0 {
     const sortedContent = !sort ? mergedContent : Fs0.sortJson(mergedContent, sort)
     this.writeFileSync(path, CommentJson.stringify(sortedContent, null, 2), format)
   }
-  async writeJsonMerge<T>(
-    path: string,
-    content: T,
-    sort: boolean | string[] | ((content: T) => string[]) = false,
-    format: boolean = false,
-  ) {
+  async writeJsonMerge<T>(path: string, content: T, sort: Fs0.JsonSort<T> = false, format: boolean = false) {
     const file0 = this.createFile0(path)
     const exists = await file0.isExists()
     if (!exists) {
@@ -787,29 +914,17 @@ export class File0 {
     return this.fs0.writeFile(this.path.abs, content, format)
   }
 
-  writeJsonSync<T>(content: T, sort: boolean | string[] | ((content: T) => string[]) = false, format: boolean = false) {
+  writeJsonSync<T>(content: T, sort: Fs0.JsonSort<T> = false, format: boolean = false) {
     return this.fs0.writeJsonSync(this.path.abs, content, sort, format)
   }
-  async writeJson<T>(
-    content: T,
-    sort: boolean | string[] | ((content: T) => string[]) = false,
-    format: boolean = false,
-  ) {
+  async writeJson<T>(content: T, sort: Fs0.JsonSort<T> = false, format: boolean = false) {
     return await this.fs0.writeJson(this.path.abs, content, sort, format)
   }
 
-  writeJsonMergeSync<T>(
-    content: T,
-    sort: boolean | string[] | ((content: T) => string[]) = false,
-    format: boolean = false,
-  ) {
+  writeJsonMergeSync<T>(content: T, sort: Fs0.JsonSort<T> = false, format: boolean = false) {
     return this.fs0.writeJsonMergeSync(this.path.abs, content, sort, format)
   }
-  async writeJsonMerge<T>(
-    content: T,
-    sort: boolean | string[] | ((content: T) => string[]) = false,
-    format: boolean = false,
-  ) {
+  async writeJsonMerge<T>(content: T, sort: Fs0.JsonSort<T> = false, format: boolean = false) {
     return await this.fs0.writeJsonMerge(this.path.abs, content, sort, format)
   }
 
@@ -870,6 +985,8 @@ export namespace Fs0 {
   export type PathOrPaths = Path | Paths
   export type PathParsed = ReturnType<typeof Fs0.prototype.parsePath>
   export type StringMatchInput = string | string[] | RegExp | RegExp[]
+  export type JsonSortPreset = 'packageJson' | 'tsconfig'
+  export type JsonSort<T> = boolean | JsonSortPreset | string[] | ((content: T) => string[])
 }
 
 export class Formatter0 {

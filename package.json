@@ -2,6 +2,31 @@
   "name": "@devp0nt/fs0",
   "version": "1.0.9",
   "description": "File system helpers for libraries",
+  "keywords": [
+    "filesystem",
+    "fs",
+    "file",
+    "utility",
+    "typescript",
+    "glob",
+    "path",
+    "json",
+    "dotenv",
+    "jiti"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "devp0nt",
+    "url": "https://github.com/devp0nt"
+  },
+  "homepage": "https://github.com/devp0nt/fs0#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devp0nt/fs0.git"
+  },
+  "bugs": {
+    "url": "https://github.com/devp0nt/fs0/issues"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -42,35 +67,6 @@
     "prepare": "husky",
     "preinstall": "bun --version || (echo 'Please install Bun: https://bun.sh' && exit 1)"
   },
-  "keywords": [
-    "filesystem",
-    "fs",
-    "file",
-    "utility",
-    "typescript",
-    "glob",
-    "path",
-    "json",
-    "dotenv",
-    "jiti"
-  ],
-  "author": {
-    "name": "devp0nt",
-    "url": "https://github.com/devp0nt"
-  },
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/devp0nt/fs0.git"
-  },
-  "bugs": {
-    "url": "https://github.com/devp0nt/fs0/issues"
-  },
-  "homepage": "https://github.com/devp0nt/fs0#readme",
-  "engines": {
-    "node": ">=18.0.0",
-    "bun": ">=1.0.0"
-  },
   "dependencies": {
     "comment-json": "^4.2.5",
     "dotenv": "^17.2.2",
@@ -101,6 +97,10 @@
     "semantic-release": "^24.2.8",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "bun": ">=1.0.0"
   },
   "publishConfig": {
     "access": "public"
