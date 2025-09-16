@@ -820,6 +820,8 @@ export class Fs0 {
     return File0.create({ filePath, rootDir: this.rootDir, cwd: this.cwd })
   }
 
+  // TODO: add log message fn
+  // TODO: add more options, like onError, onSuccess, etc...
   async exec(command: string[] | string, cwd?: string | string[], logFn?: (...args: any[]) => any) {
     const cwds = this.toPathsAbs(cwd || this.cwd)
     if (cwds.length > 1) {
