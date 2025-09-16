@@ -69,6 +69,7 @@
   },
   "dependencies": {
     "comment-json": "^4.2.5",
+    "concurrently": "^9.2.1",
     "dotenv": "^17.2.2",
     "ejs": "^3.1.10",
     "find-up": "^7.0.0",

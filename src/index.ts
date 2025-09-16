@@ -4,6 +4,7 @@ import fs from 'node:fs/promises'
 import nodePath from 'node:path'
 import readline from 'node:readline'
 import CommentJson from 'comment-json'
+import concurrently from 'concurrently'
 import dotenv from 'dotenv'
 import ejs, { type Options as EjsOptions } from 'ejs'
 import { findUp, findUpSync } from 'find-up'
@@ -871,6 +872,22 @@ export class Fs0 {
         })
       })
     }
+  }
+
+  // TODO: allow pass array of records to props, and in sequentilal, and in parallel
+  // TODO: add logger here
+  async execConcurrently(command: string[] | string, cwd: string | string[] = this.cwd, name: string | string[] = '') {
+    const commandString = Array.isArray(command) ? command.join(' ') : command
+    const cwds = this.toPathsAbs(cwd || this.cwd)
+    const names = !name ? false : Array.isArray(name) ? name : [name]
+    const cmds = cwds.map((cwd, index) => ({
+      name: names ? names[index] : cwds[index],
+      command: commandString,
+      cwd,
+    }))
+    await concurrently(cmds, {
+      prefix: 'name',
+    })
   }
 
   node = fs
