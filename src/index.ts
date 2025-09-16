@@ -306,8 +306,10 @@ export class Fs0 {
     const basename = nodePath.basename(path, extDotted)
     const dir = nodePath.dirname(path)
     const dirname = nodePath.basename(dir)
+    const dirRel = this.toRel(dir, relativeTo, false)
+    const dirnameRel = nodePath.basename(dirRel)
     const dirAbs = this.toAbs(dir)
-    const dirnameAbs = this.toAbs(dirname)
+    const dirnameAbs = nodePath.basename(dirAbs)
     return {
       original,
       abs,
@@ -319,6 +321,8 @@ export class Fs0 {
       basename,
       dir,
       dirname,
+      dirRel,
+      dirnameRel,
       dirAbs,
       dirnameAbs,
     }
@@ -686,8 +690,7 @@ export class Fs0 {
   }
 
   createFile0(filePath: string): File0 {
-    filePath = this.toAbs(filePath)
-    return File0.create({ filePath, rootDir: this.rootDir })
+    return File0.create({ filePath, rootDir: this.rootDir, cwd: this.cwd })
   }
 
   async exec(command: string[] | string, cwd?: string | string[]) {
