@@ -838,6 +838,7 @@ export class Fs0 {
     return File0.create({ filePath, rootDir: this.rootDir, cwd: this.cwd })
   }
 
+  // TODO: get output as string in result
   // TODO: add log message fn
   // TODO: add more options, like onError, onSuccess, etc...
   async exec(command: string[] | string, cwd?: string | string[], logFn?: (...args: any[]) => any) {
