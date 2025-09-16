@@ -839,7 +839,7 @@ export class Fs0 {
       cwds.map(
         (cwd) =>
           new Promise<void>((resolve, reject) => {
-            logFn?.(`$(${this.toRel(cwd)}): ${cmd} ${args.join(' ')}`)
+            logFn?.(`$(${cwd}): ${cmd} ${args.join(' ')}`)
             const child = spawn(cmd, args, {
               cwd,
               stdio: 'inherit', // live output
@@ -859,7 +859,7 @@ export class Fs0 {
     const [cmd, ...args] = commandParts
 
     for (const cwd of cwds) {
-      logFn?.(`$(${this.toRel(cwd)}): ${cmd} ${args.join(' ')}`)
+      logFn?.(`$(${cwd}): ${cmd} ${args.join(' ')}`)
       await new Promise<void>((resolve, reject) => {
         const child = spawn(cmd, args, {
           cwd,
