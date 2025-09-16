@@ -14,9 +14,9 @@ export default {
             releaseRules: [{ release: 'patch' }], // в next всегда релиз
           },
         ]
-      : ['@semantic-release/commit-analyzer'],
+      : '@semantic-release/commit-analyzer',
     branch === 'next'
-      ? []
+      ? undefined
       : [
           '@semantic-release/git',
           {
@@ -29,5 +29,5 @@ export default {
     '@semantic-release/changelog',
     '@semantic-release/npm',
     '@semantic-release/github',
-  ],
+  ].filter(Boolean),
 }
