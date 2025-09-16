@@ -26,7 +26,7 @@
     "build:test:esm": "tsup --outDir dist-test/esm --tsconfig tsconfig.build.test.json --format esm src/*",
     "build:test:cjs": "tsup --outDir dist-test/cjs --tsconfig tsconfig.build.test.json --format cjs src/*",
     "build:test": "bun run build:test:esm && bun run build:test:cjs",
-    "build:all": "bun run build:npm && bun run build:test",
+    "build:all": "bun run build && bun run build:test",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
