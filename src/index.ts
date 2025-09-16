@@ -1,10 +1,11 @@
-import { exec, execSync } from 'node:child_process'
+import { exec, execSync, spawn } from 'node:child_process'
 import fsSync from 'node:fs'
 import fs from 'node:fs/promises'
 import nodePath from 'node:path'
 import readline from 'node:readline'
 import CommentJson from 'comment-json'
 import dotenv from 'dotenv'
+import ejs, { type Options as EjsOptions } from 'ejs'
 import { findUp, findUpSync } from 'find-up'
 import { type Options as GlobbyOptions, globby, globbySync } from 'globby'
 import isGlob from 'is-glob'
@@ -399,6 +400,48 @@ export class Fs0 {
     await this.writeFile(path, CommentJson.stringify(sortedContent, null, 2), format)
   }
 
+  writeJsonMergeSync<T>(
+    path: string,
+    content: T,
+    sort: boolean | string[] | ((content: T) => string[]) = false,
+    format: boolean = false,
+  ) {
+    const file0 = this.createFile0(path)
+    const exists = file0.isExistsSync()
+    if (!exists) {
+      this.writeJsonSync(path, content, sort, format)
+      return
+    }
+    const currentContent = file0.readJsonSync()
+    const mergedContent = { ...currentContent, ...content }
+    const sortedContent = !sort ? mergedContent : Fs0.sortJson(mergedContent, sort)
+    this.writeFileSync(path, CommentJson.stringify(sortedContent, null, 2), format)
+  }
+  async writeJsonMerge<T>(
+    path: string,
+    content: T,
+    sort: boolean | string[] | ((content: T) => string[]) = false,
+    format: boolean = false,
+  ) {
+    const file0 = this.createFile0(path)
+    const exists = await file0.isExists()
+    if (!exists) {
+      await this.writeJson(path, content, sort, format)
+      return
+    }
+    const currentContent = await file0.readJson()
+    const mergedContent = { ...currentContent, ...content }
+    const sortedContent = !sort ? mergedContent : Fs0.sortJson(mergedContent, sort)
+    await this.writeJson(path, sortedContent, sort, format)
+  }
+
+  parseEjsSync(path: string, data: Record<string, any> = {}, options: EjsOptions = {}) {
+    return ejs.render(this.readFileSync(path), data, { async: false, ...options })
+  }
+  async parseEjs(path: string, data: Record<string, any> = {}, options: EjsOptions = {}) {
+    return await ejs.render(await this.readFile(path), data, { async: true, ...options })
+  }
+
   formatFileSync(path: string) {
     path = this.normalizePath(path)
     return Formatter0.formatSync(path, this.formatCommand, this.cwd)
@@ -647,6 +690,55 @@ export class Fs0 {
     return File0.create({ filePath, rootDir: this.rootDir })
   }
 
+  async exec(command: string[] | string, cwd?: string | string[]) {
+    const cwds = this.toPathsAbs(cwd || this.cwd)
+    if (cwds.length > 1) {
+      return await this.execParallel(command, cwd)
+    }
+    return await this.execSequential(command, cwd)
+  }
+
+  async execParallel(command: string[] | string, cwd?: string | string[]) {
+    const commandParts = Array.isArray(command) ? command : command.split(' ')
+    const cwds = this.toPathsAbs(cwd || this.cwd)
+    const [cmd, ...args] = commandParts
+
+    await Promise.all(
+      cwds.map(
+        (cwd) =>
+          new Promise<void>((resolve, reject) => {
+            const child = spawn(cmd, args, {
+              cwd,
+              stdio: 'inherit', // live output
+            })
+            child.on('exit', (code) => {
+              if (code === 0) resolve()
+              else reject(new Error(`"${cmd}" failed in "${cwd}" with code "${code}"`))
+            })
+          }),
+      ),
+    )
+  }
+
+  async execSequential(command: string[] | string, cwd?: string | string[]) {
+    const commandParts = Array.isArray(command) ? command : command.split(' ')
+    const cwds = this.toPathsAbs(cwd || this.cwd)
+    const [cmd, ...args] = commandParts
+
+    for (const cwd of cwds) {
+      await new Promise<void>((resolve, reject) => {
+        const child = spawn(cmd, args, {
+          cwd,
+          stdio: 'inherit',
+        })
+        child.on('exit', (code) => {
+          if (code === 0) resolve()
+          else reject(new Error(`"${cmd}" failed in "${cwd}" with code "${code}"`))
+        })
+      })
+    }
+  }
+
   node = fs
   nodeSync = fsSync
 }
@@ -703,6 +795,21 @@ export class File0 {
     return await this.fs0.writeJson(this.path.abs, content, sort, format)
   }
 
+  writeJsonMergeSync<T>(
+    content: T,
+    sort: boolean | string[] | ((content: T) => string[]) = false,
+    format: boolean = false,
+  ) {
+    return this.fs0.writeJsonMergeSync(this.path.abs, content, sort, format)
+  }
+  async writeJsonMerge<T>(
+    content: T,
+    sort: boolean | string[] | ((content: T) => string[]) = false,
+    format: boolean = false,
+  ) {
+    return await this.fs0.writeJsonMerge(this.path.abs, content, sort, format)
+  }
+
   formatSync() {
     return this.fs0.formatFileSync(this.path.abs)
   }
@@ -722,6 +829,13 @@ export class File0 {
   }
   async readJson<T = any>() {
     return (await this.fs0.readJson(this.path.abs)) as T
+  }
+
+  parseEjsSync(data?: Record<string, any>, options: EjsOptions = {}) {
+    return this.fs0.parseEjsSync(this.path.abs, data, options)
+  }
+  async parseEjs(data?: Record<string, any>, options: EjsOptions = {}) {
+    return await this.fs0.parseEjs(this.path.abs, data, options)
   }
 
   relToDir(file0: File0): string
