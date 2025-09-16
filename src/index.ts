@@ -820,15 +820,15 @@ export class Fs0 {
     return File0.create({ filePath, rootDir: this.rootDir, cwd: this.cwd })
   }
 
-  async exec(command: string[] | string, cwd?: string | string[]) {
+  async exec(command: string[] | string, cwd?: string | string[], logFn?: (...args: any[]) => any) {
     const cwds = this.toPathsAbs(cwd || this.cwd)
     if (cwds.length > 1) {
-      return await this.execParallel(command, cwd)
+      return await this.execParallel(command, cwd, logFn)
     }
-    return await this.execSequential(command, cwd)
+    return await this.execSequential(command, cwd, logFn)
   }
 
-  async execParallel(command: string[] | string, cwd?: string | string[]) {
+  async execParallel(command: string[] | string, cwd?: string | string[], logFn?: (...args: any[]) => any) {
     const commandParts = Array.isArray(command) ? command : command.split(' ')
     const cwds = this.toPathsAbs(cwd || this.cwd)
     const [cmd, ...args] = commandParts
@@ -837,6 +837,7 @@ export class Fs0 {
       cwds.map(
         (cwd) =>
           new Promise<void>((resolve, reject) => {
+            logFn?.(`$(${this.toRel(cwd)}): ${cmd} ${args.join(' ')}`)
             const child = spawn(cmd, args, {
               cwd,
               stdio: 'inherit', // live output
@@ -850,12 +851,13 @@ export class Fs0 {
     )
   }
 
-  async execSequential(command: string[] | string, cwd?: string | string[]) {
+  async execSequential(command: string[] | string, cwd?: string | string[], logFn?: (...args: any[]) => any) {
     const commandParts = Array.isArray(command) ? command : command.split(' ')
     const cwds = this.toPathsAbs(cwd || this.cwd)
     const [cmd, ...args] = commandParts
 
     for (const cwd of cwds) {
+      logFn?.(`$(${this.toRel(cwd)}): ${cmd} ${args.join(' ')}`)
       await new Promise<void>((resolve, reject) => {
         const child = spawn(cmd, args, {
           cwd,
