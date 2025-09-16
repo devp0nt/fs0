@@ -285,6 +285,7 @@ export class Fs0 {
   }
 
   parsePath(path: string, relativeTo: string = this.rootDir) {
+    const original = path
     const abs = this.toAbs(path)
     const rel = this.toRel(path, relativeTo, false)
     const relDotted = this.toRel(path, relativeTo, true)
@@ -297,6 +298,7 @@ export class Fs0 {
     const dirAbs = this.toAbs(dir)
     const dirnameAbs = this.toAbs(dirname)
     return {
+      original,
       abs,
       rel,
       relDotted,
@@ -311,12 +313,15 @@ export class Fs0 {
     }
   }
 
-  replaceExt(path: string, ext: string) {
+  static replaceExt(path: string, ext: string) {
     const originalExt = nodePath.extname(path)
     if (ext && !ext.startsWith('.')) {
       ext = `.${ext}`
     }
     return path.replace(new RegExp(`${originalExt}$`), ext)
+  }
+  replaceExt(path: string, ext: string) {
+    return Fs0.replaceExt(path, ext)
   }
 
   writeFileSync(path: string, content: string, format: boolean = false) {

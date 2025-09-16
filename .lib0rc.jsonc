@@ -4,5 +4,22 @@
   "authorName": "Sergei Dmitriev",
   "authorUrl": "https://p0nt.dev",
   "description": "File system helpers for libraries",
-  "keywords": ["filesystem", "fs", "file", "utility", "typescript", "glob"]
+  "keywords": ["filesystem", "fs", "file", "utility", "typescript", "glob"],
+  "templates": {
+    ".github/workflows/ci.yml.ejs": true,
+    ".husky/commit-msg.ejs": true,
+    ".husky/pre-commit.ejs": true,
+    ".vscode/settings.json.ejs": true,
+    "src/index.test.ts.ejs": true,
+    "src/index.ts.ejs": true,
+    ".commitlintrc.js.ejs": true,
+    ".gitignore.ejs": true,
+    ".releaserc.mjs.ejs": true,
+    "biome.jsonc.ejs": true,
+    "LICENSE.ejs": true,
+    "package.json.ejs": true,
+    "tsconfig.build.json.ejs": true,
+    "tsconfig.json.ejs": true,
+    "tsup.config.ejs": true
+  }
 }

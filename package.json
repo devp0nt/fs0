@@ -23,6 +23,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "dev:tsc": "tsc --watch --preserveWatchOutput --project tsconfig.build.json",
     "test": "bun test",
     "test:esm": "cross-env TEST_FORMAT=esm bun test src/index.test.ts",
     "test:cjs": "cross-env TEST_FORMAT=cjs bun test src/index.test.ts",

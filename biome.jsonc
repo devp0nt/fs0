@@ -28,7 +28,7 @@
       "recommended": true,
       "style": {
         "useTemplate": "off",
-        "noProcessEnv": "error"
+        "noProcessEnv": "off"
       },
       "correctness": {
         "noEmptyPattern": "off",
