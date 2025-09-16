@@ -848,8 +848,10 @@ export class Fs0 {
     return await this.execSequential(command, cwd, logFn)
   }
 
+  // TODO: do we really need command as array
   async execParallel(command: string[] | string, cwd?: string | string[], logFn?: (...args: any[]) => any) {
     const commandParts = Array.isArray(command) ? command : command.split(' ')
+    const commandString = commandParts.join(' ')
     const cwds = this.toPathsAbs(cwd || this.cwd)
     const [cmd, ...args] = commandParts
 
@@ -858,14 +860,25 @@ export class Fs0 {
         (cwd) =>
           new Promise<void>((resolve, reject) => {
             logFn?.(`$(${cwd}): ${cmd} ${args.join(' ')}`)
-            const child = spawn(cmd, args, {
-              cwd,
-              stdio: 'inherit', // live output
-            })
-            child.on('exit', (code) => {
-              if (code === 0) resolve()
-              else reject(new Error(`"${cmd}" failed in "${cwd}" with code "${code}"`))
-            })
+            if (typeof command === 'string') {
+              try {
+                execSync(commandString, {
+                  cwd,
+                  stdio: 'inherit',
+                })
+              } catch (error) {
+                reject(new Error(`"${cmd}" failed in "${cwd}" with error "${error}"`))
+              }
+            } else {
+              const child = spawn(cmd, args, {
+                cwd,
+                stdio: 'inherit',
+              })
+              child.on('exit', (code) => {
+                if (code === 0) resolve()
+                else reject(new Error(`"${cmd}" failed in "${cwd}" with code "${code}"`))
+              })
+            }
           }),
       ),
     )
@@ -873,20 +886,32 @@ export class Fs0 {
 
   async execSequential(command: string[] | string, cwd?: string | string[], logFn?: (...args: any[]) => any) {
     const commandParts = Array.isArray(command) ? command : command.split(' ')
+    const commandString = commandParts.join(' ')
     const cwds = this.toPathsAbs(cwd || this.cwd)
     const [cmd, ...args] = commandParts
 
     for (const cwd of cwds) {
       logFn?.(`$(${cwd}): ${cmd} ${args.join(' ')}`)
       await new Promise<void>((resolve, reject) => {
-        const child = spawn(cmd, args, {
-          cwd,
-          stdio: 'inherit',
-        })
-        child.on('exit', (code) => {
-          if (code === 0) resolve()
-          else reject(new Error(`"${cmd}" failed in "${cwd}" with code "${code}"`))
-        })
+        if (typeof command === 'string') {
+          try {
+            execSync(commandString, {
+              cwd,
+              stdio: 'inherit',
+            })
+          } catch (error) {
+            reject(new Error(`"${cmd}" failed in "${cwd}" with error "${error}"`))
+          }
+        } else {
+          const child = spawn(cmd, args, {
+            cwd,
+            stdio: 'inherit',
+          })
+          child.on('exit', (code) => {
+            if (code === 0) resolve()
+            else reject(new Error(`"${cmd}" failed in "${cwd}" with code "${code}"`))
+          })
+        }
       })
     }
   }
