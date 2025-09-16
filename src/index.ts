@@ -554,8 +554,15 @@ export class Fs0 {
   }
 
   async import<T = unknown>(path: string, options?: JitiOptions): Promise<T> {
+    function getCallerPath() {
+      try {
+        return import.meta.url
+      } catch {
+        return __filename
+      }
+    }
     path = this.toAbs(path)
-    const jiti = createJiti(import.meta.url, { ...options })
+    const jiti = createJiti(getCallerPath(), { ...options })
     return await jiti.import(path)
   }
 

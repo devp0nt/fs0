@@ -35,7 +35,7 @@ jobs:
         run: bun run types
 
       - name: Build
-        run: bun run build
+        run: bun run build:all
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -43,6 +43,7 @@ jobs:
           name: build-files
           path: |
             dist/
+            dist-test/
             package.json
           retention-days: 1
 
