@@ -24,7 +24,7 @@
   "homepage": "https://github.com/devp0nt/fs0#readme",
   "repository": {
     "type": "git",
-    "url": "\"git+https://github.com/devp0nt/fs0.git\""
+    "url": "git+https://github.com/devp0nt/fs0.git"
   },
   "bugs": {
     "url": "https://github.com/devp0nt/fs0/issues"
