@@ -110,6 +110,8 @@ describe('Fs0', () => {
     expect(Fs0.isStringMatch(testString2, '*/*/*')).toBe(true)
     expect(Fs0.isStringMatch(testString2, '**')).toBe(true)
     expect(Fs0.isStringMatch(testString2, '*')).toBe(false)
+    const testString3 = `// @gen0:start print('const y = 2'); print('const z = 3');`
+    expect(Fs0.isStringMatch(testString3, /@gen0:start/)).toBe(true)
   })
 })
 

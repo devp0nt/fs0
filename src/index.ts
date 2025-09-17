@@ -179,12 +179,14 @@ export class Fs0 {
     {
       cwd,
       relative,
+      ...restOptions
     }: {
       cwd?: string
       relative?: string | false
-    } = {},
+    } & GlobbyOptions = {},
   ) {
     const allPaths = await this.glob(glob, {
+      ...restOptions,
       cwd,
       relative,
     })
@@ -812,22 +814,26 @@ export class Fs0 {
   }
 
   async rm(path: string) {
+    path = this.toAbs(path)
     try {
       await fs.rm(path)
     } catch {}
   }
   rmSync(path: string) {
+    path = this.toAbs(path)
     try {
       fsSync.rmSync(path)
     } catch {}
   }
 
   async rmdir(path: string) {
+    path = this.toAbs(path)
     try {
       await fs.rmdir(path, { recursive: true })
     } catch {}
   }
   rmdirSync(path: string) {
+    path = this.toAbs(path)
     try {
       fsSync.rmdirSync(path, { recursive: true })
     } catch {}
