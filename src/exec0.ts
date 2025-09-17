@@ -1,6 +1,6 @@
 import nodePath from 'node:path'
 import chalk from 'chalk'
-import { type ResultPromise as ExecaReturnValue, execa } from 'execa'
+import { type ResultPromise as ExecaReturnValue, execa, execaCommand } from 'execa'
 
 export namespace Exec0 {
   export type CommandOrParts = string | string[]
@@ -24,7 +24,7 @@ export namespace Exec0 {
     timeoutMs?: number
     log?: (...args: any[]) => void
     /** Resolve with results even on non-zero exit? default false (reject on non-zero) */
-    resolveOnNonZeroExit?: boolean
+    throwNonZero?: boolean
     /** Prefer local binaries in node_modules/.bin (default true) */
     preferLocal?: boolean
     /** Add a colored prefix before each log line (e.g. the cwd) */
@@ -53,7 +53,7 @@ export namespace Exec0 {
     prefixSuffix?: string
     fixPrefixesLength?: boolean
     preferLocal?: boolean
-    resolveOnNonZeroExit?: boolean
+    throwNonZero?: boolean
     interactive?: Interactive
     silent?: boolean
     colors?: boolean | undefined
@@ -77,7 +77,7 @@ export class Exec0 {
   prefixSuffix: string
   fixPrefixesLength: boolean
   preferLocal: boolean
-  resolveOnNonZeroExit: boolean
+  throwNonZero: boolean
   interactive: Exec0.Interactive
   silent: boolean
   colors: boolean | null
@@ -90,7 +90,7 @@ export class Exec0 {
     prefixSuffix,
     fixPrefixesLength,
     preferLocal,
-    resolveOnNonZeroExit,
+    throwNonZero,
     interactive,
     silent,
     colors,
@@ -102,7 +102,7 @@ export class Exec0 {
     prefixSuffix: string
     fixPrefixesLength: boolean
     preferLocal: boolean
-    resolveOnNonZeroExit: boolean
+    throwNonZero: boolean
     interactive: Exec0.Interactive
     silent: boolean
     colors: boolean | null
@@ -114,7 +114,7 @@ export class Exec0 {
     this.prefixSuffix = prefixSuffix
     this.fixPrefixesLength = fixPrefixesLength
     this.preferLocal = preferLocal
-    this.resolveOnNonZeroExit = resolveOnNonZeroExit
+    this.throwNonZero = throwNonZero
     this.interactive = interactive
     this.silent = silent
     this.colors = colors
@@ -128,7 +128,7 @@ export class Exec0 {
     prefixSuffix,
     fixPrefixesLength,
     preferLocal,
-    resolveOnNonZeroExit,
+    throwNonZero,
     interactive,
     silent,
     colors,
@@ -140,8 +140,8 @@ export class Exec0 {
       normalizeCwd: normalizeCwd ?? ((cwd) => cwd),
       prefixSuffix: prefixSuffix ?? ' | ',
       fixPrefixesLength: fixPrefixesLength ?? true,
-      preferLocal: preferLocal ?? false,
-      resolveOnNonZeroExit: resolveOnNonZeroExit ?? false,
+      preferLocal: preferLocal ?? true,
+      throwNonZero: throwNonZero ?? false,
       interactive: interactive ?? 'tee',
       silent: silent ?? false,
       colors: colors ?? true,
@@ -273,7 +273,7 @@ export class Exec0 {
       silent = this.silent,
       colors = this.colors,
       timeoutMs,
-      resolveOnNonZeroExit = this.resolveOnNonZeroExit,
+      throwNonZero = this.throwNonZero,
       preferLocal = this.preferLocal,
       prefix,
       prefixSuffix = this.prefixSuffix,
@@ -291,21 +291,25 @@ export class Exec0 {
       colors === true
         ? {
             FORCE_COLOR: '3',
+            CLICOLOR: '1',
+            CLICOLOR_FORCE: '1',
             COLORTERM: 'truecolor',
-            NO_COLOR: undefined as any,
+            NO_COLOR: undefined,
           }
         : colors === false
           ? {
-              FORCE_COLOR: undefined as any,
-              COLORTERM: undefined as any,
+              FORCE_COLOR: undefined,
+              CLICOLOR: undefined,
+              CLICOLOR_FORCE: undefined,
+              COLORTERM: undefined,
               NO_COLOR: '1',
             }
           : {}
 
     const envForced = {
       ...process.env,
-      ...colorsEnv,
       ...env,
+      ...colorsEnv,
     }
 
     const cmdStr = typeof command === 'string' ? command : command.join(' ')
@@ -338,7 +342,7 @@ export class Exec0 {
       cmdStr: string,
       log: (...args: any[]) => void,
       finalize: (code: number, stdout: string, stderr: string, output: string) => Exec0.ExecResult,
-      resolveOnNonZeroExit: boolean,
+      throwNonZero: boolean,
     ): Promise<Exec0.ExecResult> => {
       let out = ''
       let err = ''
@@ -390,8 +394,8 @@ export class Exec0 {
 
       const r = await child
       const res = finalize(r.exitCode ?? 0, out, err, output)
-      if (r.exitCode !== 0 && !resolveOnNonZeroExit) {
-        throw new Error(`Command failed: ${cmdStr} (code ${r.exitCode})`)
+      if (r.exitCode !== 0 && throwNonZero) {
+        throw new Error(`Command failed: ${cmdStr} (code ${r.exitCode || '?'}) (cause: ${r.cause || '?'})`)
       }
       return res
     }
@@ -415,34 +419,41 @@ export class Exec0 {
 
         const r = await execa(userShell, shellArgs, { ...common, stdio: 'inherit' })
         const res = finalize(r.exitCode ?? 0, '', '', '')
-        if (r.exitCode === 0) log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
-        else log(chalk.red('✗'), `code ${r.exitCode}`)
-        if (!resolveOnNonZeroExit && r.exitCode !== 0) throw new Error(`Command failed: ${cmdStr} (code ${r.exitCode})`)
+        if (r.exitCode === 0) {
+          log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
+        } else {
+          log(chalk.red('✗'), `(code ${r.exitCode || '?'}) (cause: ${r.cause || '?'})`)
+        }
+        if (throwNonZero && r.exitCode !== 0) {
+          throw new Error(`Command failed: ${cmdStr} (code ${r.exitCode || '?'}) (cause: ${r.cause || '?'})`)
+        }
         return res
       }
 
       if (typeof command === 'string') {
         // Use the user's shell so strings can include pipes/redirects
         if (interactive === true) {
-          // const r = await execaCommand(cmdStr, { ...common, stdio: 'inherit' })
           const r = await execa(cmdStr, { ...common, shell: true, stdio: 'inherit' })
           const res = finalize(r.exitCode ?? 0, '', '', '')
-          if (r.exitCode === 0) log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
-          else log(chalk.red('✗'), `code ${r.exitCode}`)
-          if (!resolveOnNonZeroExit && r.exitCode !== 0)
-            throw new Error(`Command failed: ${cmdStr} (code ${r.exitCode})`)
+          if (r.exitCode === 0) {
+            log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
+          } else {
+            log(chalk.red('✗'), `(code ${r.exitCode || '?'}) (cause: ${r.cause || '?'})`)
+          }
+          if (throwNonZero && r.exitCode !== 0) {
+            throw new Error(`Command failed: ${cmdStr} (code ${r.exitCode || '?'}) (cause: ${r.cause || '?'})`)
+          }
           return res
         }
 
+        // TODO: allow not capture at all, but still have prefixes
         if (interactive === 'tee') {
-          // const child = execaCommand(cmdStr, { ...common, stdio: ['inherit', 'pipe', 'pipe'] })
           const child = execa(cmdStr, { ...common, shell: true, stdio: ['inherit', 'pipe', 'pipe'] })
-          return await teeAndCapture(child, cmdStr, log, finalize, resolveOnNonZeroExit)
+          return await teeAndCapture(child, cmdStr, log, finalize, throwNonZero)
         }
 
         // interactive === false (silent capture)
-        // const r = await execaCommand(cmdStr, { ...common })
-        const r = await execa(cmdStr, { ...common, shell: true, stripFinalNewline: false })
+        const r = await execaCommand(cmdStr, { ...common })
         // execa returns stdout/stderr strings by default
         const res = finalize(
           r.exitCode ?? 0,
@@ -450,25 +461,44 @@ export class Exec0 {
           r.stderr ?? '',
           [r.stdout, r.stderr].filter(Boolean).join(),
         )
-        if (r.exitCode === 0) log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
-        else log(chalk.red('✗'), `code ${r.exitCode}`)
-        if (!resolveOnNonZeroExit && r.exitCode !== 0) throw new Error(`Command failed: ${cmdStr} (code ${r.exitCode})`)
+        if (r.exitCode === 0) {
+          log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
+        } else {
+          log(chalk.red('✗'), `(code ${r.exitCode || '?'}) (cause: ${r.cause || '?'})`)
+        }
+        if (throwNonZero && r.exitCode !== 0) {
+          throw new Error(`Command failed: ${cmdStr} (code ${r.exitCode || '?'}) (cause: ${r.cause || '?'})`)
+        }
         return res
       } else {
         // Array form: [bin, ...args] (no shell; safest for args)
         const [file, ...args] = command
         if (interactive === true) {
-          const r = await execa(file as string, args as string[], { ...common, stdio: 'inherit' })
-          const res = finalize(r.exitCode ?? 0, '', '', '')
-          if (r.exitCode === 0) log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
-          else log(chalk.red('✗'), `code ${r.exitCode}`)
-          if (!resolveOnNonZeroExit && r.exitCode !== 0) throw new Error(`Command failed: ${file} (code ${r.exitCode})`)
+          const r = await execa(file as string, args as string[], {
+            ...common,
+            // shell: true,
+            stdio: 'inherit',
+          })
+          const res = finalize(
+            r.exitCode ?? 0,
+            r.stdout ?? '',
+            r.stderr ?? '',
+            [r.stdout, r.stderr].filter(Boolean).join(),
+          )
+          if (r.exitCode === 0) {
+            log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
+          } else {
+            log(chalk.red('✗'), `(code ${r.exitCode || '?'}) (cause: ${r.cause || '?'})`)
+          }
+          if (throwNonZero && r.exitCode !== 0) {
+            throw new Error(`Command failed: ${file} (code ${r.exitCode || '?'}) (cause: ${r.cause || '?'})`)
+          }
           return res
         }
 
         if (interactive === 'tee') {
           const child = execa(file as string, args as string[], { ...common, stdio: ['inherit', 'pipe', 'pipe'] })
-          return await teeAndCapture(child, cmdStr, log, finalize, resolveOnNonZeroExit)
+          return await teeAndCapture(child, cmdStr, log, finalize, throwNonZero)
         }
 
         const r = await execa(file as string, args as string[], { ...common })
@@ -478,9 +508,14 @@ export class Exec0 {
           r.stderr ?? '',
           [r.stdout, r.stderr].filter(Boolean).join(),
         )
-        if (r.exitCode === 0) log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
-        else log(chalk.red('✗'), `code ${r.exitCode}`)
-        if (!resolveOnNonZeroExit && r.exitCode !== 0) throw new Error(`Command failed: ${file} (code ${r.exitCode})`)
+        if (r.exitCode === 0) {
+          log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
+        } else {
+          log(chalk.red('✗'), `(code ${r.exitCode || '?'}) (cause: ${r.cause || '?'})`)
+        }
+        if (throwNonZero && r.exitCode !== 0) {
+          throw new Error(`Command failed: ${file} (code ${r.exitCode || '?'}) (cause: ${r.cause || '?'})`)
+        }
         return res
       }
     } catch (err: any) {
@@ -512,6 +547,8 @@ export class Exec0 {
     } else if (isArrayOfOptions(args[0])) {
       options.options = args[0]
     } else if (isStringOrArrayOfStrings(args[0])) {
+      options.command = args[0]
+    } else if (isArrayOfArraysOfStrings(args[0])) {
       options.command = args[0]
     } else {
       throw new Error('Invalid first argument')
@@ -554,7 +591,6 @@ export class Exec0 {
 
   manyOptionsToOneOptions(manyOptions: Exec0.ManyOptions): Exec0.Options[] {
     const { command, cwd, names, options: optionsArray, ...rest } = manyOptions
-    // console.log('many', { command, cwd, names, parallel, options, ...rest })
     const execOneOptions = (() => {
       if (optionsArray) {
         return optionsArray.map((options, index) => {
@@ -568,30 +604,63 @@ export class Exec0 {
         })
       } else {
         const cwds = cwd === undefined ? [process.cwd()] : Array.isArray(cwd) ? cwd : [cwd]
-        if (isStringOrArrayOfStrings(command)) {
-          return cwds.map((cwd, cwdIndex) => {
+        return cwds.flatMap((cwd, cwdIndex) => {
+          if (typeof command === 'string') {
             const cwdDirname = nodePath.basename(cwd)
             const prefix = Array.isArray(names) ? names[cwdIndex] : names === true ? cwdDirname : undefined
-            return { ...rest, command: typeof command === 'string' ? [command] : command, cwd, prefix }
+            return { ...rest, command, cwd, prefix }
+          }
+          return command.map((oneCommand, commandIndex) => {
+            const optionIndex = cwdIndex * command.length + commandIndex
+            const cwdDirname = nodePath.basename(cwd)
+            const prefixSuffix = command.length ? `.${commandIndex}` : ''
+            const prefix = Array.isArray(names)
+              ? names[optionIndex]
+              : names === true
+                ? `${cwdDirname}${prefixSuffix}`
+                : undefined
+            return { ...rest, command: oneCommand, cwd, prefix }
           }) satisfies Exec0.Options[]
-        } else if (isArrayOfArraysOfStrings(command)) {
-          const commands = command
-          return cwds.flatMap((cwd, cwdIndex) =>
-            commands.map((command, commandIndex) => {
-              const optionIndex = cwdIndex * commands.length + commandIndex
-              const cwdDirname = nodePath.basename(cwd)
-              const prefixSuffix = commands.length ? `.${commandIndex}` : ''
-              const prefix = Array.isArray(names)
-                ? names[optionIndex]
-                : names === true
-                  ? `${cwdDirname}${prefixSuffix}`
-                  : undefined
-              return { ...rest, command, cwd, prefix }
-            }),
-          ) satisfies Exec0.Options[]
-        } else {
-          throw new Error('Invalid command, should be string, string[], or string[][]')
-        }
+        }) satisfies Exec0.Options[]
+        // if (isStringOrArrayOfStrings(command)) {
+        //   return cwds.flatMap((cwd, cwdIndex) => {
+        //     if (typeof command === 'string') {
+        //       const cwdDirname = nodePath.basename(cwd)
+        //       const prefix = Array.isArray(names) ? names[cwdIndex] : names === true ? cwdDirname : undefined
+        //       return { ...rest, command, cwd, prefix }
+        //     } else {
+        //       const commands = command
+        //       return commands.map((command, commandIndex) => {
+        //         const optionIndex = cwdIndex * commands.length + commandIndex
+        //         const cwdDirname = nodePath.basename(cwd)
+        //         const prefixSuffix = commands.length ? `.${commandIndex}` : ''
+        //         const prefix = Array.isArray(names)
+        //           ? names[optionIndex]
+        //           : names === true
+        //             ? `${cwdDirname}${prefixSuffix}`
+        //             : undefined
+        //         return { ...rest, command, cwd, prefix }
+        //       }) satisfies Exec0.Options[]
+        //     }
+        //   }) satisfies Exec0.Options[]
+        // } else if (isArrayOfArraysOfStrings(command)) {
+        //   const commands = command
+        //   return cwds.flatMap((cwd, cwdIndex) =>
+        //     commands.map((command, commandIndex) => {
+        //       const optionIndex = cwdIndex * commands.length + commandIndex
+        //       const cwdDirname = nodePath.basename(cwd)
+        //       const prefixSuffix = commands.length ? `.${commandIndex}` : ''
+        //       const prefix = Array.isArray(names)
+        //         ? names[optionIndex]
+        //         : names === true
+        //           ? `${cwdDirname}${prefixSuffix}`
+        //           : undefined
+        //       return { ...rest, command, cwd, prefix }
+        //     }),
+        //   ) satisfies Exec0.Options[]
+        // } else {
+        //   throw new Error('Invalid command, should be string, string[], or string[][]')
+        // }
       }
     })()
     return execOneOptions
@@ -632,7 +701,6 @@ export class Exec0 {
   manyCommand(options: Exec0.ManyOptions): string
   manyCommand(...args: any[]): string {
     const manyOptions = Exec0.normalizeManyOptions(args)
-    // console.log('many', { command, cwd, names, parallel, options, ...rest })
     const execOneOptions = this.manyOptionsToOneOptions(manyOptions)
     const { parallel, fixPrefixesLength = this.fixPrefixesLength, interactive } = manyOptions
 

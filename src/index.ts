@@ -17,8 +17,8 @@ import { Exec0 } from './exec0'
 // I do not know why they do not include "default" in JitiOptions
 type JitiOptions = JitiOptionsOriginal & { default?: true }
 
+// TODO: Удалить умоанду конкрентли и добавить свою кли
 // TODO: При импорте файла через джити находить ближайший тсконфиг и тянуть из него paths чтобы разрезолвить алиасы абсолютно, и вообще вторым аргументом любые настройкли джити
-// TODO: убрать importDefualt, путсь черехз настройки управляется
 
 export class Fs0 {
   rootDir: string
