@@ -51,7 +51,7 @@ jspm_packages/
 
 # Temporary folders
 temp/
-test-temp/
+test-temp*/
 
 # Secrets and sensitive files
 secrets/
