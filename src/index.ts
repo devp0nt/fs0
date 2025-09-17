@@ -37,8 +37,8 @@ export class Fs0 {
     this.cwd = nodePath.resolve(this.rootDir, this.cwd)
     this.formatCommand = input.formatCommand
     const exec0 = Exec0.create({ normalizeCwd: (cwd) => this.toAbs(cwd) })
-    this.exec = exec0.one
-    this.execMany = exec0.many
+    this.exec = exec0.one.bind(exec0)
+    this.execMany = exec0.many.bind(exec0)
   }
   static create(input: Fs0.CreateFsInput = {}) {
     return new Fs0(input)

@@ -26,6 +26,7 @@ export namespace Exec0 {
     preferLocal?: boolean
     /** Add a colored prefix before each log line (e.g. the cwd) */
     prefix?: string
+    prefixSuffix?: string
   }
   export type ManyOptions = {
     command: StrCommandOrCommands
@@ -33,6 +34,7 @@ export namespace Exec0 {
     parallel?: boolean
     names?: string[] | boolean
     options?: Options[]
+    fixPrefixesLength?: boolean
   } & Omit<Options, 'command' | 'cwd'>
   export type ExecResult = {
     cwd: string
@@ -40,6 +42,7 @@ export namespace Exec0 {
     code: number
     stdout: string
     stderr: string
+    output: string
     durationMs: number
   }
 }
@@ -54,13 +57,33 @@ const isUndefined = (x: any): x is undefined => x === undefined
 
 export class Exec0 {
   normalizeCwd: Exec0.NormalizeCwd
+  prefixSuffix: string
+  fixPrefixesLength: boolean
 
-  private constructor({ normalizeCwd }: { normalizeCwd: Exec0.NormalizeCwd }) {
+  private constructor({
+    normalizeCwd,
+    prefixSuffix,
+    fixPrefixesLength,
+  }: { normalizeCwd: Exec0.NormalizeCwd; prefixSuffix: string; fixPrefixesLength: boolean }) {
     this.normalizeCwd = normalizeCwd
+    this.prefixSuffix = prefixSuffix
+    this.fixPrefixesLength = fixPrefixesLength
   }
 
-  static create({ normalizeCwd = (cwd: Exec0.Cwd) => cwd }: { normalizeCwd?: Exec0.NormalizeCwd } = {}): Exec0 {
-    return new Exec0({ normalizeCwd })
+  static create({
+    normalizeCwd,
+    prefixSuffix,
+    fixPrefixesLength,
+  }: {
+    normalizeCwd?: Exec0.NormalizeCwd
+    prefixSuffix?: string
+    fixPrefixesLength?: boolean
+  } = {}): Exec0 {
+    return new Exec0({
+      normalizeCwd: normalizeCwd ?? ((cwd) => cwd),
+      prefixSuffix: prefixSuffix ?? ' | ',
+      fixPrefixesLength: fixPrefixesLength ?? true,
+    })
   }
 
   static normalizeOneOptions(args: any[]): Exec0.Options {
@@ -131,6 +154,7 @@ export class Exec0 {
       preferLocal = true,
       prefix,
       command,
+      prefixSuffix = this.prefixSuffix,
     } = options
     const cwd = this.normalizeCwd(options.cwd ?? process.cwd())
 
@@ -142,8 +166,8 @@ export class Exec0 {
       NO_COLOR: undefined as any,
     }
     const cmdStr = typeof command === 'string' ? command : command.join(' ')
-    const label = prefix ? chalk.bold(prefix) + ' ' : ''
-    log(chalk.gray(`${cwd}`), `${label}${chalk.cyan(cmdStr)}`)
+    const label = prefix ? chalk.bold(`${prefix}${prefixSuffix}`) : ''
+    log(`${label}${chalk.gray(cwd)} ${chalk.bold('$')} ${chalk.cyan(cmdStr)}`)
 
     const started = Date.now()
 
@@ -162,6 +186,7 @@ export class Exec0 {
       code,
       stdout,
       stderr,
+      output: `${stdout}${stderr}`,
       durationMs: Date.now() - started,
     })
 
@@ -174,20 +199,54 @@ export class Exec0 {
     ): Promise<Exec0.ExecResult> => {
       let out = ''
       let err = ''
-      // Stream to console AND capture
+
+      const makeLinePrefixer = (dest: NodeJS.WriteStream, label: string | undefined) => {
+        const lbl = label ?? ''
+        // biome-ignore lint/correctness/noUnusedVariables: <biome bug>
+        let buf = ''
+        const push = (s: string, final = false) => {
+          // keep capture exact, but for display normalize CR -> NL so we break lines nicely
+          buf += s
+          let work = s.replace(/\r(?!\n)/g, '\n')
+          let idx: number
+          // biome-ignore lint/suspicious/noAssignInExpressions: <ok>
+          while ((idx = work.indexOf('\n')) !== -1) {
+            const seg = work.slice(0, idx) // completed line (no trailing \n)
+            dest.write(lbl + seg + '\n')
+            work = work.slice(idx + 1)
+          }
+          // if final, flush any remainder as a full line to avoid label-collision with next writer
+          if (final && work.length) {
+            dest.write(lbl + work + '\n')
+          }
+        }
+        const end = () => push('', true)
+        return { push, end }
+      }
+
+      const stdoutWriter = makeLinePrefixer(process.stdout, label)
+      const stderrWriter = makeLinePrefixer(process.stderr, label)
+
       child.stdout?.on('data', (chunk: Buffer | string) => {
-        const s = chunk.toString()
+        const s = typeof chunk === 'string' ? chunk : chunk.toString()
         out += s
-        process.stdout.write(`${label}${chunk}`)
+        stdoutWriter.push(s)
       })
       child.stderr?.on('data', (chunk: Buffer | string) => {
-        const s = chunk.toString()
+        const s = typeof chunk === 'string' ? chunk : chunk.toString()
         err += s
-        process.stderr.write(`${label}${chunk}`)
+        stderrWriter.push(s)
       })
+      child.stdout?.on('end', stdoutWriter.end)
+      child.stderr?.on('end', stderrWriter.end)
+      child.stdout?.on('close', stdoutWriter.end)
+      child.stderr?.on('close', stderrWriter.end)
+
       const r = await child
       const res = finalize(r.exitCode ?? 0, out, err)
-      if (r.exitCode !== 0 && !resolveOnNonZeroExit) throw new Error(`Command failed: ${cmdStr} (code ${r.exitCode})`)
+      if (r.exitCode !== 0 && !resolveOnNonZeroExit) {
+        throw new Error(`Command failed: ${cmdStr} (code ${r.exitCode})`)
+      }
       return res
     }
 
@@ -338,7 +397,15 @@ export class Exec0 {
   async many(optionsArray: Exec0.Options[]): Promise<Exec0.ExecResult[]>
   async many(options: Exec0.ManyOptions): Promise<Exec0.ExecResult[]>
   async many(...args: any[]): Promise<Exec0.ExecResult[]> {
-    const { command, cwd, names, parallel, options, ...rest } = Exec0.normalizeManyOptions(args)
+    const {
+      command,
+      cwd,
+      names,
+      parallel,
+      options,
+      fixPrefixesLength = this.fixPrefixesLength,
+      ...rest
+    } = Exec0.normalizeManyOptions(args)
     // console.log('many', { command, cwd, names, parallel, options, ...rest })
     const execOneOptions = (() => {
       if (options) {
@@ -361,6 +428,14 @@ export class Exec0 {
         )
       }
     })()
+
+    const prefixes = execOneOptions.map((options) => options.prefix)
+    if (typeof prefixes[0] === 'string' && fixPrefixesLength) {
+      const longestPrefix = prefixes.reduce((max, prefix) => Math.max(max, prefix?.length ?? 0), 0)
+      for (const options of execOneOptions) {
+        options.prefix = options.prefix?.padEnd(longestPrefix, ' ')
+      }
+    }
 
     if (parallel) {
       return await Promise.all(execOneOptions.map((options) => Exec0.one(options)))
