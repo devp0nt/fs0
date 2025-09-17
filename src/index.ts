@@ -13,6 +13,7 @@ import isGlob from 'is-glob'
 import { createJiti, type JitiOptions as JitiOptionsOriginal } from 'jiti'
 import uniq from 'lodash/uniq.js'
 import micromatch from 'micromatch'
+import { Exec0 } from './exec0'
 
 // I do not know why they do not include "default" in JitiOptions
 type JitiOptions = JitiOptionsOriginal & { default?: true }
@@ -36,6 +37,9 @@ export class Fs0 {
     this.rootDir = nodePath.resolve(process.cwd(), input.rootDir || this.cwd)
     this.cwd = nodePath.resolve(this.rootDir, this.cwd)
     this.formatCommand = input.formatCommand
+    const exec0 = Exec0.create({ normalizeCwd: (cwd) => this.toAbs(cwd) })
+    this.exec = exec0.one
+    this.execMany = exec0.many
   }
   static create(input: Fs0.CreateFsInput = {}) {
     return new Fs0(input)
@@ -59,6 +63,9 @@ export class Fs0 {
   setCwd(cwd: string) {
     this.cwd = this.toAbs(cwd)
   }
+
+  exec: (typeof Exec0)['one']
+  execMany: (typeof Exec0)['many']
 
   static isStringMatch = (str: string | undefined, search: Fs0.StringMatchInput): boolean => {
     if (!str) return false
@@ -838,100 +845,134 @@ export class Fs0 {
     return File0.create({ filePath, rootDir: this.rootDir, cwd: this.cwd })
   }
 
-  // TODO: get output as string in result
-  // TODO: add log message fn
-  // TODO: add more options, like onError, onSuccess, etc...
-  async exec(command: string[] | string, cwd?: string | string[], logFn?: (...args: any[]) => any) {
-    const cwds = this.toPathsAbs(cwd || this.cwd)
-    if (cwds.length > 1) {
-      return await this.execParallel(command, cwd, logFn)
-    }
-    return await this.execSequential(command, cwd, logFn)
-  }
+  // async exec(command: Exec0.CommandOrParts, options?: Omit<Exec0.Options, 'command'>): Promise<Exec0.ExecResult>
+  // async exec(
+  //   command: Exec0.CommandOrParts,
+  //   cwd?: Exec0.Cwd,
+  //   options?: Omit<Exec0.Options, 'command' | 'cwd'>,
+  // ): Promise<Exec0.ExecResult>
+  // async exec(options: Omit<Exec0.Options, 'command' | 'cwd'>): Promise<Exec0.ExecResult>
+  // async exec(...args: [any, ...any[]]): Promise<Exec0.ExecResult> {
+  //   const exec0 = Exec0.create({ normalizeCwd: (cwd) => this.toAbs(cwd) })
+  //   return await exec0.one(...args)
+  // }
 
-  // TODO: do we really need command as array
-  async execParallel(command: string[] | string, cwd?: string | string[], logFn?: (...args: any[]) => any) {
-    const commandParts = Array.isArray(command) ? command : command.split(' ')
-    const commandString = commandParts.join(' ')
-    const cwds = this.toPathsAbs(cwd || this.cwd)
-    const [cmd, ...args] = commandParts
+  // async many(
+  //   command: Exec0.StrCommandOrCommands,
+  //   options?: Omit<Exec0.ManyOptions, 'command'>,
+  // ): Promise<Exec0.ExecResult[]>
+  // async many(
+  //   command: Exec0.StrCommandOrCommands,
+  //   cwd?: Exec0.CwdOrCwds,
+  //   options?: Omit<Exec0.ManyOptions, 'command' | 'cwd'>,
+  // ): Promise<Exec0.ExecResult[]>
+  // async many(
+  //   command: Exec0.StrCommandOrCommands,
+  //   cwd?: Exec0.CwdOrCwds,
+  //   names?: string[] | null,
+  //   options?: Omit<Exec0.ManyOptions, 'command' | 'cwd'>,
+  // ): Promise<Exec0.ExecResult[]>
+  // async many(optionsArray: Exec0.Options[]): Promise<Exec0.ExecResult[]>
+  // async many(options: Exec0.ManyOptions): Promise<Exec0.ExecResult[]>
+  // async many(...args: any[]): Promise<Exec0.ExecResult[]> {
+  //   const exec0 = Exec0.create({ normalizeCwd: (cwd) => this.toAbs(cwd) })
+  //   return await exec0.many(...args)
+  // }
 
-    await Promise.all(
-      cwds.map(
-        (cwd) =>
-          new Promise<void>((resolve, reject) => {
-            logFn?.(`$(${cwd}): ${cmd} ${args.join(' ')}`)
-            if (typeof command === 'string') {
-              try {
-                execSync(commandString, {
-                  cwd,
-                  stdio: 'inherit',
-                })
-              } catch (error) {
-                reject(new Error(`"${cmd}" failed in "${cwd}" with error "${error}"`))
-              }
-            } else {
-              const child = spawn(cmd, args, {
-                cwd,
-                stdio: 'inherit',
-              })
-              child.on('exit', (code) => {
-                if (code === 0) resolve()
-                else reject(new Error(`"${cmd}" failed in "${cwd}" with code "${code}"`))
-              })
-            }
-          }),
-      ),
-    )
-  }
+  // // TODO: get output as string in result
+  // // TODO: add log message fn
+  // // TODO: add more options, like onError, onSuccess, etc...
+  // async exec(command: string[] | string, cwd?: string | string[], logFn?: (...args: any[]) => any) {
+  //   const cwds = this.toPathsAbs(cwd || this.cwd)
+  //   if (cwds.length > 1) {
+  //     return await this.execParallel(command, cwd, logFn)
+  //   }
+  //   return await this.execSequential(command, cwd, logFn)
+  // }
 
-  async execSequential(command: string[] | string, cwd?: string | string[], logFn?: (...args: any[]) => any) {
-    const commandParts = Array.isArray(command) ? command : command.split(' ')
-    const commandString = commandParts.join(' ')
-    const cwds = this.toPathsAbs(cwd || this.cwd)
-    const [cmd, ...args] = commandParts
+  // // TODO: do we really need command as array
+  // async execParallel(command: string[] | string, cwd?: string | string[], logFn?: (...args: any[]) => any) {
+  //   const commandParts = Array.isArray(command) ? command : command.split(' ')
+  //   const commandString = commandParts.join(' ')
+  //   const cwds = this.toPathsAbs(cwd || this.cwd)
+  //   const [cmd, ...args] = commandParts
 
-    for (const cwd of cwds) {
-      logFn?.(`$(${cwd}): ${cmd} ${args.join(' ')}`)
-      await new Promise<void>((resolve, reject) => {
-        if (typeof command === 'string') {
-          try {
-            execSync(commandString, {
-              cwd,
-              stdio: 'inherit',
-            })
-          } catch (error) {
-            reject(new Error(`"${cmd}" failed in "${cwd}" with error "${error}"`))
-          }
-        } else {
-          const child = spawn(cmd, args, {
-            cwd,
-            stdio: 'inherit',
-          })
-          child.on('exit', (code) => {
-            if (code === 0) resolve()
-            else reject(new Error(`"${cmd}" failed in "${cwd}" with code "${code}"`))
-          })
-        }
-      })
-    }
-  }
+  //   await Promise.all(
+  //     cwds.map(
+  //       (cwd) =>
+  //         new Promise<void>((resolve, reject) => {
+  //           logFn?.(`$(${cwd}): ${cmd} ${args.join(' ')}`)
+  //           if (typeof command === 'string') {
+  //             try {
+  //               execSync(commandString, {
+  //                 cwd,
+  //                 stdio: 'inherit',
+  //               })
+  //             } catch (error) {
+  //               reject(new Error(`"${cmd}" failed in "${cwd}" with error "${error}"`))
+  //             }
+  //           } else {
+  //             const child = spawn(cmd, args, {
+  //               cwd,
+  //               stdio: 'inherit',
+  //             })
+  //             child.on('exit', (code) => {
+  //               if (code === 0) resolve()
+  //               else reject(new Error(`"${cmd}" failed in "${cwd}" with code "${code}"`))
+  //             })
+  //           }
+  //         }),
+  //     ),
+  //   )
+  // }
+
+  // async execSequential(command: string[] | string, cwd?: string | string[], logFn?: (...args: any[]) => any) {
+  //   const commandParts = Array.isArray(command) ? command : command.split(' ')
+  //   const commandString = commandParts.join(' ')
+  //   const cwds = this.toPathsAbs(cwd || this.cwd)
+  //   const [cmd, ...args] = commandParts
+
+  //   for (const cwd of cwds) {
+  //     logFn?.(`$(${cwd}): ${cmd} ${args.join(' ')}`)
+  //     await new Promise<void>((resolve, reject) => {
+  //       if (typeof command === 'string') {
+  //         try {
+  //           execSync(commandString, {
+  //             cwd,
+  //             stdio: 'inherit',
+  //           })
+  //         } catch (error) {
+  //           reject(new Error(`"${cmd}" failed in "${cwd}" with error "${error}"`))
+  //         }
+  //       } else {
+  //         const child = spawn(cmd, args, {
+  //           cwd,
+  //           stdio: 'inherit',
+  //         })
+  //         child.on('exit', (code) => {
+  //           if (code === 0) resolve()
+  //           else reject(new Error(`"${cmd}" failed in "${cwd}" with code "${code}"`))
+  //         })
+  //       }
+  //     })
+  //   }
+  // }
 
   // TODO: allow pass array of records to props, and in sequentilal, and in parallel
   // TODO: add logger here
-  async execConcurrently(command: string[] | string, cwd: string | string[] = this.cwd, name: string | string[] = '') {
-    const commandString = Array.isArray(command) ? command.join(' ') : command
-    const cwds = this.toPathsAbs(cwd || this.cwd)
-    const names = !name ? false : Array.isArray(name) ? name : [name]
-    const cmds = cwds.map((cwd, index) => ({
-      name: names ? names[index] : cwds[index],
-      command: commandString,
-      cwd,
-    }))
-    await concurrently(cmds, {
-      prefix: 'name',
-    })
-  }
+  // async execConcurrently(command: string[] | string, cwd: string | string[] = this.cwd, name: string | string[] = '') {
+  //   const commandString = Array.isArray(command) ? command.join(' ') : command
+  //   const cwds = this.toPathsAbs(cwd || this.cwd)
+  //   const names = !name ? false : Array.isArray(name) ? name : [name]
+  //   const cmds = cwds.map((cwd, index) => ({
+  //     name: names ? names[index] : cwds[index],
+  //     command: commandString,
+  //     cwd,
+  //   }))
+  //   await concurrently(cmds, {
+  //     prefix: 'name',
+  //   })
+  // }
 
   node = fs
   nodeSync = fsSync
@@ -1057,6 +1098,10 @@ export namespace Fs0 {
   export type StringMatchInput = string | string[] | RegExp | RegExp[]
   export type JsonSortPreset = 'packageJson' | 'tsconfig'
   export type JsonSort<T> = boolean | JsonSortPreset | string[] | ((content: T) => string[])
+  export type ExecResult = Exec0.ExecResult
+  export type ExecResultArray = Exec0.ExecResult[]
+  export type ExecResultPromise = Promise<Exec0.ExecResult>
+  export type ExecResultPromiseArray = Promise<Exec0.ExecResult[]>
 }
 
 export class Formatter0 {
