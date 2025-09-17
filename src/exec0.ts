@@ -4,6 +4,7 @@ import { type ResultPromise as ExecaReturnValue, execa } from 'execa'
 
 export namespace Exec0 {
   export type CommandOrParts = string | string[]
+  export type CommandOrCommands = string | string[] | string[][]
   export type Cwd = string
   export type CwdOrCwds = string | string[]
   export type NormalizeCwd = (cwd: Cwd) => string
@@ -30,7 +31,7 @@ export namespace Exec0 {
     prefixSuffix?: string
   }
   export type ManyOptions = {
-    command: CommandOrParts
+    command: CommandOrCommands
     cwd?: CwdOrCwds
     parallel?: boolean
     names?: string[] | boolean
@@ -499,16 +500,16 @@ export class Exec0 {
   }
 
   static async many(
-    command: Exec0.CommandOrParts,
+    command: Exec0.CommandOrCommands,
     options?: Omit<Exec0.ManyOptions, 'command'>,
   ): Promise<Exec0.ExecResult[]>
   static async many(
-    command: Exec0.CommandOrParts,
+    command: Exec0.CommandOrCommands,
     cwd?: Exec0.CwdOrCwds,
     options?: Omit<Exec0.ManyOptions, 'command' | 'cwd'>,
   ): Promise<Exec0.ExecResult[]>
   static async many(
-    command: Exec0.CommandOrParts,
+    command: Exec0.CommandOrCommands,
     cwd?: Exec0.CwdOrCwds,
     names?: string[] | null,
     options?: Omit<Exec0.ManyOptions, 'command' | 'cwd'>,
@@ -520,14 +521,17 @@ export class Exec0 {
     return await exec0.many(...args)
   }
 
-  async many(command: Exec0.CommandOrParts, options?: Omit<Exec0.ManyOptions, 'command'>): Promise<Exec0.ExecResult[]>
   async many(
-    command: Exec0.CommandOrParts,
+    command: Exec0.CommandOrCommands,
+    options?: Omit<Exec0.ManyOptions, 'command'>,
+  ): Promise<Exec0.ExecResult[]>
+  async many(
+    command: Exec0.CommandOrCommands,
     cwd?: Exec0.CwdOrCwds,
     options?: Omit<Exec0.ManyOptions, 'command' | 'cwd'>,
   ): Promise<Exec0.ExecResult[]>
   async many(
-    command: Exec0.CommandOrParts,
+    command: Exec0.CommandOrCommands,
     cwd?: Exec0.CwdOrCwds,
     names?: string[] | null,
     options?: Omit<Exec0.ManyOptions, 'command' | 'cwd'>,
@@ -558,25 +562,28 @@ export class Exec0 {
         })
       } else {
         const cwds = cwd === undefined ? [process.cwd()] : Array.isArray(cwd) ? cwd : [cwd]
-        return cwds.map((cwd, cwdIndex) => {
-          const cwdDirname = nodePath.basename(cwd)
-          const prefix = Array.isArray(names) ? names[cwdIndex] : names === true ? cwdDirname : undefined
-          return { ...rest, command, cwd, prefix }
-        })
-        // const commands = typeof command === 'string' ? [command] : command
-        // return cwds.flatMap((cwd, cwdIndex) =>
-        //   commands.map((command, commandIndex) => {
-        //     const optionIndex = cwdIndex * commands.length + commandIndex
-        //     const cwdDirname = nodePath.basename(cwd)
-        //     const prefixSuffix = commands.length ? `.${commandIndex}` : ''
-        //     const prefix = Array.isArray(names)
-        //       ? names[optionIndex]
-        //       : names === true
-        //         ? `${cwdDirname}${prefixSuffix}`
-        //         : undefined
-        //     return { ...rest, command, cwd, prefix }
-        //   }),
-        // )
+        const commands = typeof command === 'string' ? [command] : command
+        if (isArrayOfStrings(commands)) {
+          return cwds.map((cwd, cwdIndex) => {
+            const cwdDirname = nodePath.basename(cwd)
+            const prefix = Array.isArray(names) ? names[cwdIndex] : names === true ? cwdDirname : undefined
+            return { ...rest, command, cwd, prefix }
+          })
+        } else {
+          return cwds.flatMap((cwd, cwdIndex) =>
+            commands.map((command, commandIndex) => {
+              const optionIndex = cwdIndex * commands.length + commandIndex
+              const cwdDirname = nodePath.basename(cwd)
+              const prefixSuffix = commands.length ? `.${commandIndex}` : ''
+              const prefix = Array.isArray(names)
+                ? names[optionIndex]
+                : names === true
+                  ? `${cwdDirname}${prefixSuffix}`
+                  : undefined
+              return { ...rest, command, cwd, prefix }
+            }),
+          )
+        }
       }
     })()
 
