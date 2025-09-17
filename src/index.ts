@@ -24,6 +24,8 @@ export class Fs0 {
   rootDir: string
   cwd: string
   formatCommand: string | undefined
+  exec0: Exec0
+  exec0CreateInput: Exec0.CreateInput
 
   private constructor(input: Fs0.CreateFsInput = {}) {
     if ('filePath' in input && input.filePath) {
@@ -36,9 +38,10 @@ export class Fs0 {
     this.rootDir = nodePath.resolve(process.cwd(), input.rootDir || this.cwd)
     this.cwd = nodePath.resolve(this.rootDir, this.cwd)
     this.formatCommand = input.formatCommand
-    const exec0 = Exec0.create({ normalizeCwd: (cwd) => this.toAbs(cwd) })
-    this.exec = exec0.one.bind(exec0)
-    this.execMany = exec0.many.bind(exec0)
+    this.exec0CreateInput = input.exec0CreateInput ?? {}
+    this.exec0 = Exec0.create({ normalizeCwd: (cwd) => this.toAbs(cwd), ...this.exec0CreateInput })
+    this.exec = this.exec0.one.bind(this.exec0)
+    this.execMany = this.exec0.many.bind(this.exec0)
   }
   static create(input: Fs0.CreateFsInput = {}) {
     return new Fs0(input)
@@ -53,7 +56,7 @@ export class Fs0 {
       cwd = this.resolve(input.cwd)
     }
     const rootDir = this.resolve(input.rootDir || this.rootDir)
-    return Fs0.create({ ...input, rootDir, cwd })
+    return Fs0.create({ exec0CreateInput: this.exec0CreateInput, ...input, rootDir, cwd })
   }
 
   setRootDir(rootDir: string) {
@@ -61,6 +64,12 @@ export class Fs0 {
   }
   setCwd(cwd: string) {
     this.cwd = this.toAbs(cwd)
+  }
+  setExec0CreateInput(exec0CreateInput: Exec0.CreateInput) {
+    this.exec0CreateInput = exec0CreateInput
+    this.exec0 = Exec0.create({ ...this.exec0CreateInput, normalizeCwd: (cwd) => this.toAbs(cwd) })
+    this.exec = this.exec0.one.bind(this.exec0)
+    this.execMany = this.exec0.many.bind(this.exec0)
   }
 
   exec: (typeof Exec0)['one']
@@ -350,7 +359,9 @@ export class Fs0 {
     const dirPath = this.toAbs(path)
     fsSync.mkdirSync(dirPath, { recursive: true })
     if (crateFs0) {
-      return this.createFs0({ cwd: dirPath }) as T extends true ? Fs0 : undefined
+      return this.createFs0({ cwd: dirPath, exec0CreateInput: this.exec0CreateInput }) as T extends true
+        ? Fs0
+        : undefined
     }
     return undefined as T extends true ? Fs0 : undefined
   }
@@ -358,7 +369,9 @@ export class Fs0 {
     const dirPath = this.toAbs(path)
     await fs.mkdir(dirPath, { recursive: true })
     if (crateFs0) {
-      return this.createFs0({ cwd: dirPath }) as T extends true ? Fs0 : undefined
+      return this.createFs0({ cwd: dirPath, exec0CreateInput: this.exec0CreateInput }) as T extends true
+        ? Fs0
+        : undefined
     }
     return undefined as T extends true ? Fs0 : undefined
   }
@@ -841,7 +854,7 @@ export class Fs0 {
   }
 
   createFile0(filePath: string): File0 {
-    return File0.create({ filePath, rootDir: this.rootDir, cwd: this.cwd })
+    return File0.create({ filePath, rootDir: this.rootDir, cwd: this.cwd, exec0CreateInput: this.exec0CreateInput })
   }
 
   // async exec(command: Exec0.CommandOrParts, options?: Omit<Exec0.Options, 'command'>): Promise<Exec0.ExecResult>
@@ -986,17 +999,19 @@ export class File0 {
     this.path = pathParsed || this.fs0.parsePath(filePath)
   }
 
-  static create({ filePath, rootDir, cwd }: { filePath: string; rootDir?: string; cwd?: string }): File0 {
+  static create({ filePath, rootDir, cwd, exec0CreateInput }: File0.CreateInput): File0 {
     const relatedFs0 = cwd
       ? Fs0.create({
           rootDir,
           cwd,
+          exec0CreateInput,
         })
       : undefined
     const pathParsed = relatedFs0 ? relatedFs0.parsePath(filePath) : undefined
     const fs0 = Fs0.create({
       rootDir,
       filePath,
+      exec0CreateInput,
     })
     return new File0({ filePath, fs0, pathParsed })
   }
@@ -1071,7 +1086,7 @@ export class File0 {
   relToDir(dir: string): string
   relToDir(input: string | File0 | Fs0) {
     const dir = typeof input === 'string' ? input : input instanceof File0 ? input.path.dir : input.cwd
-    const fs0 = this.fs0.createFs0({ cwd: dir })
+    const fs0 = this.fs0.createFs0({ cwd: dir, exec0CreateInput: this.fs0.exec0CreateInput })
     return fs0.toRel(this.path.abs)
   }
 
@@ -1084,8 +1099,12 @@ export class File0 {
   }
 }
 
+export namespace File0 {
+  export type CreateInput = { filePath: string; rootDir?: string; cwd?: string; exec0CreateInput?: Exec0.CreateInput }
+}
+
 export namespace Fs0 {
-  export type CreateFsInput = { rootDir?: string; formatCommand?: string } & (
+  export type CreateFsInput = { rootDir?: string; formatCommand?: string; exec0CreateInput?: Exec0.CreateInput } & (
     | { fileDir?: string }
     | { filePath?: string }
     | { cwd?: string }

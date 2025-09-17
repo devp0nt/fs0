@@ -4,7 +4,6 @@ import { type ResultPromise as ExecaReturnValue, execa } from 'execa'
 
 export namespace Exec0 {
   export type CommandOrParts = string | string[]
-  export type StrCommandOrCommands = string | string[]
   export type Cwd = string
   export type CwdOrCwds = string | string[]
   export type NormalizeCwd = (cwd: Cwd) => string
@@ -18,6 +17,7 @@ export namespace Exec0 {
      */
     interactive?: boolean | 'tee'
     silent?: boolean
+    colors?: boolean
     env?: NodeJS.ProcessEnv
     timeoutMs?: number
     log?: (...args: any[]) => void
@@ -30,7 +30,7 @@ export namespace Exec0 {
     prefixSuffix?: string
   }
   export type ManyOptions = {
-    command: StrCommandOrCommands
+    command: CommandOrParts
     cwd?: CwdOrCwds
     parallel?: boolean
     names?: string[] | boolean
@@ -46,6 +46,19 @@ export namespace Exec0 {
     output: string
     durationMs: number
   }
+  export type CreateInput = {
+    normalizeCwd?: Exec0.NormalizeCwd
+    prefixSuffix?: string
+    fixPrefixesLength?: boolean
+    preferLocal?: boolean
+    resolveOnNonZeroExit?: boolean
+    interactive?: boolean | 'tee'
+    silent?: boolean
+    colors?: boolean | undefined
+    env?: NodeJS.ProcessEnv
+    commandPrefix?: string | string[] | null
+    commandWrapper?: string | null
+  }
 }
 
 const isString = (x: any): x is string => typeof x === 'string'
@@ -60,30 +73,78 @@ export class Exec0 {
   normalizeCwd: Exec0.NormalizeCwd
   prefixSuffix: string
   fixPrefixesLength: boolean
+  preferLocal: boolean
+  resolveOnNonZeroExit: boolean
+  interactive: boolean | 'tee'
+  silent: boolean
+  colors: boolean | null
+  env: NodeJS.ProcessEnv
+  commandPrefix: string | string[] | null
+  commandWrapper: string | null
 
   private constructor({
     normalizeCwd,
     prefixSuffix,
     fixPrefixesLength,
-  }: { normalizeCwd: Exec0.NormalizeCwd; prefixSuffix: string; fixPrefixesLength: boolean }) {
+    preferLocal,
+    resolveOnNonZeroExit,
+    interactive,
+    silent,
+    colors,
+    env,
+    commandPrefix,
+    commandWrapper,
+  }: {
+    normalizeCwd: Exec0.NormalizeCwd
+    prefixSuffix: string
+    fixPrefixesLength: boolean
+    preferLocal: boolean
+    resolveOnNonZeroExit: boolean
+    interactive: boolean | 'tee'
+    silent: boolean
+    colors: boolean | null
+    env: NodeJS.ProcessEnv
+    commandPrefix: string | string[] | null
+    commandWrapper: string | null
+  }) {
     this.normalizeCwd = normalizeCwd
     this.prefixSuffix = prefixSuffix
     this.fixPrefixesLength = fixPrefixesLength
+    this.preferLocal = preferLocal
+    this.resolveOnNonZeroExit = resolveOnNonZeroExit
+    this.interactive = interactive
+    this.silent = silent
+    this.colors = colors
+    this.env = env
+    this.commandPrefix = commandPrefix
+    this.commandWrapper = commandWrapper
   }
 
   static create({
     normalizeCwd,
     prefixSuffix,
     fixPrefixesLength,
-  }: {
-    normalizeCwd?: Exec0.NormalizeCwd
-    prefixSuffix?: string
-    fixPrefixesLength?: boolean
-  } = {}): Exec0 {
+    preferLocal,
+    resolveOnNonZeroExit,
+    interactive,
+    silent,
+    colors,
+    env,
+    commandPrefix,
+    commandWrapper,
+  }: Exec0.CreateInput = {}): Exec0 {
     return new Exec0({
       normalizeCwd: normalizeCwd ?? ((cwd) => cwd),
       prefixSuffix: prefixSuffix ?? ' | ',
       fixPrefixesLength: fixPrefixesLength ?? true,
+      preferLocal: preferLocal ?? false,
+      resolveOnNonZeroExit: resolveOnNonZeroExit ?? false,
+      interactive: interactive ?? 'tee',
+      silent: silent ?? false,
+      colors: colors ?? true,
+      env: env ?? {},
+      commandPrefix: commandPrefix ?? null,
+      commandWrapper: commandWrapper ?? null,
     })
   }
 
@@ -146,28 +207,89 @@ export class Exec0 {
   async one(...args: [any, ...any[]]): Promise<Exec0.ExecResult> {
     const options = Exec0.normalizeOneOptions(args)
     const {
-      interactive = 'tee',
-      silent = false,
-      env,
+      interactive = this.interactive,
+      silent = this.silent,
+      colors = this.colors,
       timeoutMs,
-
-      resolveOnNonZeroExit = false,
-      preferLocal = true,
+      resolveOnNonZeroExit = this.resolveOnNonZeroExit,
+      preferLocal = this.preferLocal,
       prefix,
-      command,
       prefixSuffix = this.prefixSuffix,
     } = options
+    const commandPefixed = (() => {
+      const original = options.command
+      const commandPrefix = this.commandPrefix
+      if (typeof commandPrefix === 'string' && typeof original === 'string') {
+        return `${commandPrefix} ${original}`
+      } else if (typeof commandPrefix === 'string' && Array.isArray(original)) {
+        return `${commandPrefix} ${original.join(' ')}`
+      } else if (Array.isArray(commandPrefix) && typeof original === 'string') {
+        return [...commandPrefix, original]
+      } else if (Array.isArray(commandPrefix) && Array.isArray(original)) {
+        return [...commandPrefix, ...original]
+      } else {
+        return original
+      }
+    })()
+    const command = (() => {
+      if (!this.commandWrapper) {
+        return commandPefixed
+      } else {
+        // TODO: make it normal, it is very bad
+        const commandStr = typeof commandPefixed === 'string' ? commandPefixed : commandPefixed.join(' ')
+
+        // Check if wrapper uses {{command}} or {{commandEscaped}} placeholders
+        if (this.commandWrapper.includes('{{commandEscaped}}')) {
+          // For complex escaping, use the old method
+          function bashEscape(command: string): string {
+            return (
+              command
+                // escape double quotes, backslashes, $, `
+                .replace(/(["\\$`])/g, '\\$1')
+                // escape single quotes safely for double-quoted wrapper
+                .replace(/'/g, `'"'"'`)
+            )
+          }
+          const commandEscaped = bashEscape(commandStr)
+          return this.commandWrapper.replaceAll('{{commandEscaped}}', commandEscaped)
+        } else if (this.commandWrapper.includes('{{command}}')) {
+          // For simple replacement, just replace without escaping
+          return this.commandWrapper.replaceAll('{{command}}', commandStr)
+        } else {
+          // If no placeholders, treat as prefix and append command
+          return [this.commandWrapper, commandStr]
+        }
+      }
+    })()
     const cwd = this.normalizeCwd(options.cwd ?? process.cwd())
     // biome-ignore lint/suspicious/noConsole: <it os ok>
     const log = silent ? () => {} : (options.log ?? console.log)
+    const env = {
+      ...this.env,
+      ...options.env,
+    }
+
+    const colorsEnv =
+      colors === true
+        ? {
+            FORCE_COLOR: '3',
+            COLORTERM: 'truecolor',
+            NO_COLOR: undefined as any,
+          }
+        : colors === false
+          ? {
+              FORCE_COLOR: undefined as any,
+              COLORTERM: undefined as any,
+              NO_COLOR: '1',
+            }
+          : {}
 
     const envForced = {
       ...process.env,
+      ...colorsEnv,
       ...env,
-      FORCE_COLOR: env?.FORCE_COLOR ?? '3',
-      COLORTERM: env?.COLORTERM ?? 'truecolor',
-      NO_COLOR: undefined as any,
     }
+
     const cmdStr = typeof command === 'string' ? command : command.join(' ')
     const label = prefix ? chalk.bold(`${prefix}${prefixSuffix}`) : ''
     log(`${label}${chalk.gray(cwd)} ${chalk.bold('$')} ${chalk.cyan(cmdStr)}`)
@@ -377,16 +499,16 @@ export class Exec0 {
   }
 
   static async many(
-    command: Exec0.StrCommandOrCommands,
+    command: Exec0.CommandOrParts,
     options?: Omit<Exec0.ManyOptions, 'command'>,
   ): Promise<Exec0.ExecResult[]>
   static async many(
-    command: Exec0.StrCommandOrCommands,
+    command: Exec0.CommandOrParts,
     cwd?: Exec0.CwdOrCwds,
     options?: Omit<Exec0.ManyOptions, 'command' | 'cwd'>,
   ): Promise<Exec0.ExecResult[]>
   static async many(
-    command: Exec0.StrCommandOrCommands,
+    command: Exec0.CommandOrParts,
     cwd?: Exec0.CwdOrCwds,
     names?: string[] | null,
     options?: Omit<Exec0.ManyOptions, 'command' | 'cwd'>,
@@ -398,17 +520,14 @@ export class Exec0 {
     return await exec0.many(...args)
   }
 
+  async many(command: Exec0.CommandOrParts, options?: Omit<Exec0.ManyOptions, 'command'>): Promise<Exec0.ExecResult[]>
   async many(
-    command: Exec0.StrCommandOrCommands,
-    options?: Omit<Exec0.ManyOptions, 'command'>,
-  ): Promise<Exec0.ExecResult[]>
-  async many(
-    command: Exec0.StrCommandOrCommands,
+    command: Exec0.CommandOrParts,
     cwd?: Exec0.CwdOrCwds,
     options?: Omit<Exec0.ManyOptions, 'command' | 'cwd'>,
   ): Promise<Exec0.ExecResult[]>
   async many(
-    command: Exec0.StrCommandOrCommands,
+    command: Exec0.CommandOrParts,
     cwd?: Exec0.CwdOrCwds,
     names?: string[] | null,
     options?: Omit<Exec0.ManyOptions, 'command' | 'cwd'>,
@@ -421,30 +540,43 @@ export class Exec0 {
       cwd,
       names,
       parallel,
-      options,
+      options: optionsArray,
       fixPrefixesLength = this.fixPrefixesLength,
       ...rest
     } = Exec0.normalizeManyOptions(args)
     // console.log('many', { command, cwd, names, parallel, options, ...rest })
     const execOneOptions = (() => {
-      if (options) {
-        return options
+      if (optionsArray) {
+        return optionsArray.map((options, index) => {
+          const cwd = options.cwd || process.cwd()
+          const cwdDirname = nodePath.basename(cwd)
+          const prefix =
+            options.prefix ??
+            rest.prefix ??
+            (Array.isArray(names) ? names[index] : names === true ? cwdDirname : undefined)
+          return { ...rest, ...options, prefix }
+        })
       } else {
         const cwds = cwd === undefined ? [process.cwd()] : Array.isArray(cwd) ? cwd : [cwd]
-        const commands = typeof command === 'string' ? [command] : command
-        return cwds.flatMap((cwd, cwdIndex) =>
-          commands.map((command, commandIndex) => {
-            const optionIndex = cwdIndex * commands.length + commandIndex
-            const cwdDirname = nodePath.basename(cwd)
-            const prefixSuffix = commands.length ? `.${commandIndex}` : ''
-            const prefix = Array.isArray(names)
-              ? names[optionIndex]
-              : names === true
-                ? `${cwdDirname}${prefixSuffix}`
-                : undefined
-            return { ...rest, command, cwd, prefix }
-          }),
-        )
+        return cwds.map((cwd, cwdIndex) => {
+          const cwdDirname = nodePath.basename(cwd)
+          const prefix = Array.isArray(names) ? names[cwdIndex] : names === true ? cwdDirname : undefined
+          return { ...rest, command, cwd, prefix }
+        })
+        // const commands = typeof command === 'string' ? [command] : command
+        // return cwds.flatMap((cwd, cwdIndex) =>
+        //   commands.map((command, commandIndex) => {
+        //     const optionIndex = cwdIndex * commands.length + commandIndex
+        //     const cwdDirname = nodePath.basename(cwd)
+        //     const prefixSuffix = commands.length ? `.${commandIndex}` : ''
+        //     const prefix = Array.isArray(names)
+        //       ? names[optionIndex]
+        //       : names === true
+        //         ? `${cwdDirname}${prefixSuffix}`
+        //         : undefined
+        //     return { ...rest, command, cwd, prefix }
+        //   }),
+        // )
       }
     })()
 
@@ -457,11 +589,11 @@ export class Exec0 {
     }
 
     if (parallel) {
-      return await Promise.all(execOneOptions.map((options) => Exec0.one(options)))
+      return await Promise.all(execOneOptions.map((options) => this.one(options)))
     }
     const results: Exec0.ExecResult[] = []
     for (const options of execOneOptions) {
-      results.push(await Exec0.one(options))
+      results.push(await this.one(options))
     }
     return results
   }
