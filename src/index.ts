@@ -986,17 +986,27 @@ export class File0 {
   }
 
   static create({ filePath, rootDir, cwd }: File0.CreateInput): File0 {
-    const relatedFs0 = cwd
-      ? Fs0.create({
+    const { fs0, pathParsed } = (() => {
+      if (cwd) {
+        const relatedFs0 = Fs0.create({
           rootDir,
           cwd,
         })
-      : undefined
-    const pathParsed = relatedFs0 ? relatedFs0.parsePath(filePath) : undefined
-    const fs0 = Fs0.create({
-      rootDir,
-      filePath,
-    })
+        const pathParsed = relatedFs0.parsePath(filePath)
+        const fs0 = Fs0.create({
+          rootDir,
+          cwd: pathParsed.dirAbs,
+        })
+        return { fs0, pathParsed }
+      } else {
+        const fs0 = Fs0.create({
+          rootDir,
+          filePath,
+        })
+        const pathParsed = fs0.parsePath(filePath)
+        return { fs0, pathParsed }
+      }
+    })()
     return new File0({ filePath, fs0, pathParsed })
   }
 
@@ -1069,7 +1079,7 @@ export class File0 {
   relToDir(fs0: Fs0): string
   relToDir(dir: string): string
   relToDir(input: string | File0 | Fs0) {
-    const dir = typeof input === 'string' ? input : input instanceof File0 ? input.path.dir : input.cwd
+    const dir = typeof input === 'string' ? input : input instanceof File0 ? input.path.dirAbs : input.cwd
     const fs0 = this.fs0.createFs0({ cwd: dir })
     return fs0.toRel(this.path.abs)
   }
