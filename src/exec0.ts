@@ -1,6 +1,6 @@
 import nodePath from 'node:path'
 import chalk from 'chalk'
-import { type ResultPromise as ExecaReturnValue, execa, execaCommand } from 'execa'
+import { type ResultPromise as ExecaReturnValue, execa } from 'execa'
 
 export namespace Exec0 {
   export type CommandOrParts = string | string[]
@@ -180,13 +180,13 @@ export class Exec0 {
     }
 
     // Helper to return consistent shape
-    const finalize = (code: number, stdout: string, stderr: string): Exec0.ExecResult => ({
+    const finalize = (code: number, stdout: string, stderr: string, output: string): Exec0.ExecResult => ({
       cwd,
       command: cmdStr,
       code,
       stdout,
       stderr,
-      output: `${stdout}${stderr}`,
+      output,
       durationMs: Date.now() - started,
     })
 
@@ -194,11 +194,12 @@ export class Exec0 {
       child: ExecaReturnValue,
       cmdStr: string,
       log: (...args: any[]) => void,
-      finalize: (code: number, stdout: string, stderr: string) => Exec0.ExecResult,
+      finalize: (code: number, stdout: string, stderr: string, output: string) => Exec0.ExecResult,
       resolveOnNonZeroExit: boolean,
     ): Promise<Exec0.ExecResult> => {
       let out = ''
       let err = ''
+      let output = ''
 
       const makeLinePrefixer = (dest: NodeJS.WriteStream, label: string | undefined) => {
         const lbl = label ?? ''
@@ -230,11 +231,13 @@ export class Exec0 {
       child.stdout?.on('data', (chunk: Buffer | string) => {
         const s = typeof chunk === 'string' ? chunk : chunk.toString()
         out += s
+        output += s
         stdoutWriter.push(s)
       })
       child.stderr?.on('data', (chunk: Buffer | string) => {
         const s = typeof chunk === 'string' ? chunk : chunk.toString()
         err += s
+        output += s
         stderrWriter.push(s)
       })
       child.stdout?.on('end', stdoutWriter.end)
@@ -243,7 +246,7 @@ export class Exec0 {
       child.stderr?.on('close', stderrWriter.end)
 
       const r = await child
-      const res = finalize(r.exitCode ?? 0, out, err)
+      const res = finalize(r.exitCode ?? 0, out, err, output)
       if (r.exitCode !== 0 && !resolveOnNonZeroExit) {
         throw new Error(`Command failed: ${cmdStr} (code ${r.exitCode})`)
       }
@@ -254,8 +257,9 @@ export class Exec0 {
       if (typeof command === 'string') {
         // Use the user's shell so strings can include pipes/redirects
         if (interactive === true) {
-          const r = await execaCommand(cmdStr, { ...common, stdio: 'inherit' })
-          const res = finalize(r.exitCode ?? 0, '', '')
+          // const r = await execaCommand(cmdStr, { ...common, stdio: 'inherit' })
+          const r = await execa(cmdStr, { ...common, shell: true, stdio: 'inherit' })
+          const res = finalize(r.exitCode ?? 0, '', '', '')
           if (r.exitCode === 0) log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
           else log(chalk.red('✗'), `code ${r.exitCode}`)
           if (!resolveOnNonZeroExit && r.exitCode !== 0)
@@ -264,14 +268,16 @@ export class Exec0 {
         }
 
         if (interactive === 'tee') {
-          const child = execaCommand(cmdStr, { ...common, stdio: ['inherit', 'pipe', 'pipe'] })
+          // const child = execaCommand(cmdStr, { ...common, stdio: ['inherit', 'pipe', 'pipe'] })
+          const child = execa(cmdStr, { ...common, shell: true, stdio: ['inherit', 'pipe', 'pipe'] })
           return await teeAndCapture(child, cmdStr, log, finalize, resolveOnNonZeroExit)
         }
 
         // interactive === false (silent capture)
-        const r = await execaCommand(cmdStr, { ...common })
+        // const r = await execaCommand(cmdStr, { ...common })
+        const r = await execa(cmdStr, { ...common, shell: true, stripFinalNewline: false })
         // execa returns stdout/stderr strings by default
-        const res = finalize(r.exitCode ?? 0, r.stdout ?? '', r.stderr ?? '')
+        const res = finalize(r.exitCode ?? 0, r.stdout ?? '', r.stderr ?? '', '')
         if (r.exitCode === 0) log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
         else log(chalk.red('✗'), `code ${r.exitCode}`)
         if (!resolveOnNonZeroExit && r.exitCode !== 0) throw new Error(`Command failed: ${cmdStr} (code ${r.exitCode})`)
@@ -281,7 +287,7 @@ export class Exec0 {
         const [file, ...args] = command
         if (interactive === true) {
           const r = await execa(file as string, args as string[], { ...common, stdio: 'inherit' })
-          const res = finalize(r.exitCode ?? 0, '', '')
+          const res = finalize(r.exitCode ?? 0, '', '', '')
           if (r.exitCode === 0) log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
           else log(chalk.red('✗'), `code ${r.exitCode}`)
           if (!resolveOnNonZeroExit && r.exitCode !== 0) throw new Error(`Command failed: ${file} (code ${r.exitCode})`)
@@ -294,7 +300,7 @@ export class Exec0 {
         }
 
         const r = await execa(file as string, args as string[], { ...common })
-        const res = finalize(r.exitCode ?? 0, r.stdout ?? '', r.stderr ?? '')
+        const res = finalize(r.exitCode ?? 0, r.stdout ?? '', r.stderr ?? '', '')
         if (r.exitCode === 0) log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
         else log(chalk.red('✗'), `code ${r.exitCode}`)
         if (!resolveOnNonZeroExit && r.exitCode !== 0) throw new Error(`Command failed: ${file} (code ${r.exitCode})`)
