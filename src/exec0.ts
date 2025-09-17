@@ -8,6 +8,7 @@ export namespace Exec0 {
   export type Cwd = string
   export type CwdOrCwds = string | string[]
   export type NormalizeCwd = (cwd: Cwd) => string
+  export type Interactive = boolean | 'tee' | 'real'
   export type Options = {
     command: CommandOrParts
     cwd?: Cwd
@@ -16,7 +17,7 @@ export namespace Exec0 {
      * 'tee' -> show live output AND capture it (stdin attached)  <-- default for sequential
      * false -> capture silently (stdin closed)
      */
-    interactive?: boolean | 'tee'
+    interactive?: Interactive
     silent?: boolean
     colors?: boolean
     env?: NodeJS.ProcessEnv
@@ -53,7 +54,7 @@ export namespace Exec0 {
     fixPrefixesLength?: boolean
     preferLocal?: boolean
     resolveOnNonZeroExit?: boolean
-    interactive?: boolean | 'tee'
+    interactive?: Interactive
     silent?: boolean
     colors?: boolean | undefined
     env?: NodeJS.ProcessEnv
@@ -76,7 +77,7 @@ export class Exec0 {
   fixPrefixesLength: boolean
   preferLocal: boolean
   resolveOnNonZeroExit: boolean
-  interactive: boolean | 'tee'
+  interactive: Exec0.Interactive
   silent: boolean
   colors: boolean | null
   env: NodeJS.ProcessEnv
@@ -101,7 +102,7 @@ export class Exec0 {
     fixPrefixesLength: boolean
     preferLocal: boolean
     resolveOnNonZeroExit: boolean
-    interactive: boolean | 'tee'
+    interactive: Exec0.Interactive
     silent: boolean
     colors: boolean | null
     env: NodeJS.ProcessEnv
@@ -380,6 +381,30 @@ export class Exec0 {
     }
 
     try {
+      if (interactive === 'real') {
+        const cmdStr = typeof command === 'string' ? command : command.join(' ')
+
+        const userShell =
+          process.env.SHELL || (process.platform === 'win32' ? process.env.ComSpec || 'cmd.exe' : '/bin/bash')
+
+        const shellArgs = (() => {
+          if (userShell.endsWith('bash') || userShell.endsWith('zsh')) return ['-i', '-c', cmdStr]
+          if (userShell.endsWith('fish')) return ['-i', '-c', cmdStr]
+          if (process.platform === 'win32') {
+            if (userShell.toLowerCase().includes('cmd')) return ['/c', cmdStr]
+            if (userShell.toLowerCase().includes('powershell')) return ['-NoExit', '-Command', cmdStr]
+          }
+          return ['-i', '-c', cmdStr]
+        })()
+
+        const r = await execa(userShell, shellArgs, { ...common, stdio: 'inherit' })
+        const res = finalize(r.exitCode ?? 0, '', '', '')
+        if (r.exitCode === 0) log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
+        else log(chalk.red('✗'), `code ${r.exitCode}`)
+        if (!resolveOnNonZeroExit && r.exitCode !== 0) throw new Error(`Command failed: ${cmdStr} (code ${r.exitCode})`)
+        return res
+      }
+
       if (typeof command === 'string') {
         // Use the user's shell so strings can include pipes/redirects
         if (interactive === true) {
