@@ -17,6 +17,7 @@ export namespace Exec0 {
      * false -> capture silently (stdin closed)
      */
     interactive?: boolean | 'tee'
+    silent?: boolean
     env?: NodeJS.ProcessEnv
     timeoutMs?: number
     log?: (...args: any[]) => void
@@ -146,10 +147,10 @@ export class Exec0 {
     const options = Exec0.normalizeOneOptions(args)
     const {
       interactive = 'tee',
+      silent = false,
       env,
       timeoutMs,
-      // biome-ignore lint/suspicious/noConsole: <it os ok>
-      log = console.log,
+
       resolveOnNonZeroExit = false,
       preferLocal = true,
       prefix,
@@ -157,6 +158,8 @@ export class Exec0 {
       prefixSuffix = this.prefixSuffix,
     } = options
     const cwd = this.normalizeCwd(options.cwd ?? process.cwd())
+    // biome-ignore lint/suspicious/noConsole: <it os ok>
+    const log = silent ? () => {} : (options.log ?? console.log)
 
     const envForced = {
       ...process.env,
@@ -277,7 +280,12 @@ export class Exec0 {
         // const r = await execaCommand(cmdStr, { ...common })
         const r = await execa(cmdStr, { ...common, shell: true, stripFinalNewline: false })
         // execa returns stdout/stderr strings by default
-        const res = finalize(r.exitCode ?? 0, r.stdout ?? '', r.stderr ?? '', '')
+        const res = finalize(
+          r.exitCode ?? 0,
+          r.stdout ?? '',
+          r.stderr ?? '',
+          [r.stdout, r.stderr].filter(Boolean).join(),
+        )
         if (r.exitCode === 0) log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
         else log(chalk.red('✗'), `code ${r.exitCode}`)
         if (!resolveOnNonZeroExit && r.exitCode !== 0) throw new Error(`Command failed: ${cmdStr} (code ${r.exitCode})`)
@@ -300,7 +308,12 @@ export class Exec0 {
         }
 
         const r = await execa(file as string, args as string[], { ...common })
-        const res = finalize(r.exitCode ?? 0, r.stdout ?? '', r.stderr ?? '', '')
+        const res = finalize(
+          r.exitCode ?? 0,
+          r.stdout ?? '',
+          r.stderr ?? '',
+          [r.stdout, r.stderr].filter(Boolean).join(),
+        )
         if (r.exitCode === 0) log(chalk.green('✓'), chalk.gray(`${res.durationMs}ms`))
         else log(chalk.red('✗'), `code ${r.exitCode}`)
         if (!resolveOnNonZeroExit && r.exitCode !== 0) throw new Error(`Command failed: ${file} (code ${r.exitCode})`)

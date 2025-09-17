@@ -1097,6 +1097,8 @@ export namespace Fs0 {
   export type StringMatchInput = string | string[] | RegExp | RegExp[]
   export type JsonSortPreset = 'packageJson' | 'tsconfig'
   export type JsonSort<T> = boolean | JsonSortPreset | string[] | ((content: T) => string[])
+  export type ExecOptions = Exec0.Options
+  export type ExecManyOptions = Exec0.ManyOptions
   export type ExecResult = Exec0.ExecResult
   export type ExecResultArray = Exec0.ExecResult[]
   export type ExecResultPromise = Promise<Exec0.ExecResult>
