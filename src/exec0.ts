@@ -143,7 +143,7 @@ export class Exec0 {
     }
     const cmdStr = typeof command === 'string' ? command : command.join(' ')
     const label = prefix ? chalk.bold(prefix) + ' ' : ''
-    log(chalk.gray(`$(${cwd})`), label + chalk.cyan(cmdStr))
+    log(chalk.gray(`${cwd}`), `${label}${chalk.cyan(cmdStr)}`)
 
     const started = Date.now()
 
@@ -178,12 +178,12 @@ export class Exec0 {
       child.stdout?.on('data', (chunk: Buffer | string) => {
         const s = chunk.toString()
         out += s
-        process.stdout.write(chunk)
+        process.stdout.write(`${label}${chunk}`)
       })
       child.stderr?.on('data', (chunk: Buffer | string) => {
         const s = chunk.toString()
         err += s
-        process.stderr.write(chunk)
+        process.stderr.write(`${label}${chunk}`)
       })
       const r = await child
       const res = finalize(r.exitCode ?? 0, out, err)
