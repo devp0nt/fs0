@@ -42,6 +42,8 @@ export class Fs0 {
     this.exec0 = Exec0.create({ normalizeCwd: (cwd) => this.toAbs(cwd), ...this.exec0CreateInput })
     this.exec = this.exec0.one.bind(this.exec0)
     this.execMany = this.exec0.many.bind(this.exec0)
+    this.execCommand = this.exec0.oneCommand.bind(this.exec0)
+    this.execManyCommand = this.exec0.manyCommand.bind(this.exec0)
   }
   static create(input: Fs0.CreateFsInput = {}) {
     return new Fs0(input)
@@ -70,10 +72,14 @@ export class Fs0 {
     this.exec0 = Exec0.create({ ...this.exec0CreateInput, normalizeCwd: (cwd) => this.toAbs(cwd) })
     this.exec = this.exec0.one.bind(this.exec0)
     this.execMany = this.exec0.many.bind(this.exec0)
+    this.execCommand = this.exec0.oneCommand.bind(this.exec0)
+    this.execManyCommand = this.exec0.manyCommand.bind(this.exec0)
   }
 
   exec: (typeof Exec0)['one']
+  execCommand: (typeof Exec0)['oneCommand']
   execMany: (typeof Exec0)['many']
+  execManyCommand: (typeof Exec0)['manyCommand']
 
   static isStringMatch = (str: string | undefined, search: Fs0.StringMatchInput): boolean => {
     if (!str) return false

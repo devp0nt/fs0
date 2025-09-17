@@ -66,6 +66,7 @@ export namespace Exec0 {
 const isString = (x: any): x is string => typeof x === 'string'
 const isArrayOfStrings = (x: any): x is string[] => Array.isArray(x) && x.every((y) => typeof y === 'string')
 const isStringOrArrayOfStrings = (x: any): x is string | string[] => typeof x === 'string' || isArrayOfStrings(x)
+const isArrayOfArraysOfStrings = (x: any): x is string[][] => Array.isArray(x) && x.every((y) => isArrayOfStrings(y))
 const isOptions = (x: any): x is Exec0.Options => typeof x === 'object' && !Array.isArray(x)
 const isArrayOfOptions = (x: any): x is Exec0.Options[] => Array.isArray(x) && x.every((y) => isOptions(y))
 const isBoolean = (x: any): x is boolean => typeof x === 'boolean'
@@ -187,39 +188,8 @@ export class Exec0 {
     return options
   }
 
-  static async one(command: Exec0.CommandOrParts, options?: Omit<Exec0.Options, 'command'>): Promise<Exec0.ExecResult>
-  static async one(
-    command: Exec0.CommandOrParts,
-    cwd?: Exec0.Cwd,
-    options?: Omit<Exec0.Options, 'command' | 'cwd'>,
-  ): Promise<Exec0.ExecResult>
-  static async one(options: Omit<Exec0.Options, 'command' | 'cwd'>): Promise<Exec0.ExecResult>
-  static async one(...args: [any, ...any[]]): Promise<Exec0.ExecResult> {
-    const exec0 = Exec0.create()
-    return await exec0.one(...args)
-  }
-
-  async one(command: Exec0.CommandOrParts, options?: Omit<Exec0.Options, 'command'>): Promise<Exec0.ExecResult>
-  async one(
-    command: Exec0.CommandOrParts,
-    cwd?: Exec0.Cwd,
-    options?: Omit<Exec0.Options, 'command' | 'cwd'>,
-  ): Promise<Exec0.ExecResult>
-  async one(options: Omit<Exec0.Options, 'command' | 'cwd'>): Promise<Exec0.ExecResult>
-  async one(...args: [any, ...any[]]): Promise<Exec0.ExecResult> {
-    const options = Exec0.normalizeOneOptions(args)
-    const {
-      interactive = this.interactive,
-      silent = this.silent,
-      colors = this.colors,
-      timeoutMs,
-      resolveOnNonZeroExit = this.resolveOnNonZeroExit,
-      preferLocal = this.preferLocal,
-      prefix,
-      prefixSuffix = this.prefixSuffix,
-    } = options
+  normalizeCommand(original: Exec0.CommandOrParts): Exec0.CommandOrParts {
     const commandPefixed = (() => {
-      const original = options.command
       const commandPrefix = this.commandPrefix
       if (typeof commandPrefix === 'string' && typeof original === 'string') {
         return `${commandPrefix} ${original}`
@@ -263,6 +233,52 @@ export class Exec0 {
         }
       }
     })()
+    return command
+  }
+
+  static oneCommand(command: Exec0.CommandOrParts, options?: Omit<Exec0.Options, 'command'>): string
+  static oneCommand(
+    command: Exec0.CommandOrParts,
+    cwd?: Exec0.Cwd,
+    options?: Omit<Exec0.Options, 'command' | 'cwd'>,
+  ): string
+  static oneCommand(options: Omit<Exec0.Options, 'command' | 'cwd'>): string
+  static oneCommand(...args: [any, ...any[]]): string {
+    const exec0 = Exec0.create()
+    return exec0.oneCommand(...args)
+  }
+
+  oneCommand(command: Exec0.CommandOrParts, options?: Omit<Exec0.Options, 'command'>): string
+  oneCommand(command: Exec0.CommandOrParts, cwd?: Exec0.Cwd, options?: Omit<Exec0.Options, 'command' | 'cwd'>): string
+  oneCommand(options: Omit<Exec0.Options, 'command' | 'cwd'>): string
+  oneCommand(...args: [any, ...any[]]): string {
+    const options = Exec0.normalizeOneOptions(args)
+    const command = this.normalizeCommand(options.command)
+    const commandStr = typeof command === 'string' ? command : command.join(' ')
+    const cwd = this.normalizeCwd(options.cwd ?? process.cwd())
+    return `(cd ${cwd} && ${commandStr})`
+  }
+
+  async one(command: Exec0.CommandOrParts, options?: Omit<Exec0.Options, 'command'>): Promise<Exec0.ExecResult>
+  async one(
+    command: Exec0.CommandOrParts,
+    cwd?: Exec0.Cwd,
+    options?: Omit<Exec0.Options, 'command' | 'cwd'>,
+  ): Promise<Exec0.ExecResult>
+  async one(options: Omit<Exec0.Options, 'command' | 'cwd'>): Promise<Exec0.ExecResult>
+  async one(...args: [any, ...any[]]): Promise<Exec0.ExecResult> {
+    const options = Exec0.normalizeOneOptions(args)
+    const {
+      interactive = this.interactive,
+      silent = this.silent,
+      colors = this.colors,
+      timeoutMs,
+      resolveOnNonZeroExit = this.resolveOnNonZeroExit,
+      preferLocal = this.preferLocal,
+      prefix,
+      prefixSuffix = this.prefixSuffix,
+    } = options
+    const command = this.normalizeCommand(options.command)
     const cwd = this.normalizeCwd(options.cwd ?? process.cwd())
     // biome-ignore lint/suspicious/noConsole: <it os ok>
     const log = silent ? () => {} : (options.log ?? console.log)
@@ -474,6 +490,18 @@ export class Exec0 {
     }
   }
 
+  static async one(command: Exec0.CommandOrParts, options?: Omit<Exec0.Options, 'command'>): Promise<Exec0.ExecResult>
+  static async one(
+    command: Exec0.CommandOrParts,
+    cwd?: Exec0.Cwd,
+    options?: Omit<Exec0.Options, 'command' | 'cwd'>,
+  ): Promise<Exec0.ExecResult>
+  static async one(options: Omit<Exec0.Options, 'command' | 'cwd'>): Promise<Exec0.ExecResult>
+  static async one(...args: [any, ...any[]]): Promise<Exec0.ExecResult> {
+    const exec0 = Exec0.create()
+    return await exec0.one(...args)
+  }
+
   static normalizeManyOptions(args: any[]): Exec0.ManyOptions {
     if (args.length === 0) {
       throw new Error('No command provided')
@@ -524,6 +552,120 @@ export class Exec0 {
     return options
   }
 
+  manyOptionsToOneOptions(manyOptions: Exec0.ManyOptions): Exec0.Options[] {
+    const { command, cwd, names, options: optionsArray, ...rest } = manyOptions
+    // console.log('many', { command, cwd, names, parallel, options, ...rest })
+    const execOneOptions = (() => {
+      if (optionsArray) {
+        return optionsArray.map((options, index) => {
+          const cwd = options.cwd || process.cwd()
+          const cwdDirname = nodePath.basename(cwd)
+          const prefix =
+            options.prefix ??
+            rest.prefix ??
+            (Array.isArray(names) ? names[index] : names === true ? cwdDirname : undefined)
+          return { ...rest, ...options, prefix }
+        })
+      } else {
+        const cwds = cwd === undefined ? [process.cwd()] : Array.isArray(cwd) ? cwd : [cwd]
+        if (isStringOrArrayOfStrings(command)) {
+          return cwds.map((cwd, cwdIndex) => {
+            const cwdDirname = nodePath.basename(cwd)
+            const prefix = Array.isArray(names) ? names[cwdIndex] : names === true ? cwdDirname : undefined
+            return { ...rest, command: typeof command === 'string' ? [command] : command, cwd, prefix }
+          }) satisfies Exec0.Options[]
+        } else if (isArrayOfArraysOfStrings(command)) {
+          const commands = command
+          return cwds.flatMap((cwd, cwdIndex) =>
+            commands.map((command, commandIndex) => {
+              const optionIndex = cwdIndex * commands.length + commandIndex
+              const cwdDirname = nodePath.basename(cwd)
+              const prefixSuffix = commands.length ? `.${commandIndex}` : ''
+              const prefix = Array.isArray(names)
+                ? names[optionIndex]
+                : names === true
+                  ? `${cwdDirname}${prefixSuffix}`
+                  : undefined
+              return { ...rest, command, cwd, prefix }
+            }),
+          ) satisfies Exec0.Options[]
+        } else {
+          throw new Error('Invalid command, should be string, string[], or string[][]')
+        }
+      }
+    })()
+    return execOneOptions
+  }
+
+  static manyCommand(command: Exec0.CommandOrCommands, options?: Omit<Exec0.ManyOptions, 'command'>): string
+  static manyCommand(
+    command: Exec0.CommandOrCommands,
+    cwd?: Exec0.CwdOrCwds,
+    options?: Omit<Exec0.ManyOptions, 'command' | 'cwd'>,
+  ): string
+  static manyCommand(
+    command: Exec0.CommandOrCommands,
+    cwd?: Exec0.CwdOrCwds,
+    names?: string[] | null,
+    options?: Omit<Exec0.ManyOptions, 'command' | 'cwd'>,
+  ): string
+  static manyCommand(optionsArray: Exec0.Options[]): string
+  static manyCommand(options: Exec0.ManyOptions): string
+  static manyCommand(...args: [any, ...any[]]): string {
+    const exec0 = Exec0.create()
+    return exec0.manyCommand(...args)
+  }
+
+  manyCommand(command: Exec0.CommandOrCommands, options?: Omit<Exec0.ManyOptions, 'command'>): string
+  manyCommand(
+    command: Exec0.CommandOrCommands,
+    cwd?: Exec0.CwdOrCwds,
+    options?: Omit<Exec0.ManyOptions, 'command' | 'cwd'>,
+  ): string
+  manyCommand(
+    command: Exec0.CommandOrCommands,
+    cwd?: Exec0.CwdOrCwds,
+    names?: string[] | null,
+    options?: Omit<Exec0.ManyOptions, 'command' | 'cwd'>,
+  ): string
+  manyCommand(optionsArray: Exec0.Options[]): string
+  manyCommand(options: Exec0.ManyOptions): string
+  manyCommand(...args: any[]): string {
+    const manyOptions = Exec0.normalizeManyOptions(args)
+    // console.log('many', { command, cwd, names, parallel, options, ...rest })
+    const execOneOptions = this.manyOptionsToOneOptions(manyOptions)
+    const { parallel, fixPrefixesLength = this.fixPrefixesLength, interactive } = manyOptions
+
+    const prefixes = execOneOptions.map((options) => options.prefix)
+    if (typeof prefixes[0] === 'string' && fixPrefixesLength) {
+      const longestPrefix = prefixes.reduce((max, prefix) => Math.max(max, prefix?.length ?? 0), 0)
+      for (const options of execOneOptions) {
+        options.prefix = options.prefix?.padEnd(longestPrefix, ' ')
+      }
+    }
+
+    const commandStrs = execOneOptions.map((options) => this.oneCommand(options))
+
+    if (parallel) {
+      const commands = commandStrs
+      const names = execOneOptions.map((o) => o.prefix)
+      const namesExists = names.filter(Boolean).length > 0
+      const colors = names.map(() => 'auto')
+
+      return [
+        `concurrently`,
+        interactive ? `--shell "bash -i -c"` : undefined,
+        namesExists ? `--names "${names.join(',')}"` : undefined,
+        namesExists ? `--prefix-colors "${colors.join(',')}"` : undefined,
+        ...commands.map((c) => `"${c}"`),
+      ]
+        .filter(Boolean)
+        .join(' ')
+    } else {
+      return commandStrs.join(' && ')
+    }
+  }
+
   static async many(
     command: Exec0.CommandOrCommands,
     options?: Omit<Exec0.ManyOptions, 'command'>,
@@ -564,53 +706,9 @@ export class Exec0 {
   async many(optionsArray: Exec0.Options[]): Promise<Exec0.ExecResult[]>
   async many(options: Exec0.ManyOptions): Promise<Exec0.ExecResult[]>
   async many(...args: any[]): Promise<Exec0.ExecResult[]> {
-    const {
-      command,
-      cwd,
-      names,
-      parallel,
-      options: optionsArray,
-      fixPrefixesLength = this.fixPrefixesLength,
-      ...rest
-    } = Exec0.normalizeManyOptions(args)
-    // console.log('many', { command, cwd, names, parallel, options, ...rest })
-    const execOneOptions = (() => {
-      if (optionsArray) {
-        return optionsArray.map((options, index) => {
-          const cwd = options.cwd || process.cwd()
-          const cwdDirname = nodePath.basename(cwd)
-          const prefix =
-            options.prefix ??
-            rest.prefix ??
-            (Array.isArray(names) ? names[index] : names === true ? cwdDirname : undefined)
-          return { ...rest, ...options, prefix }
-        })
-      } else {
-        const cwds = cwd === undefined ? [process.cwd()] : Array.isArray(cwd) ? cwd : [cwd]
-        const commands = typeof command === 'string' ? [command] : command
-        if (isArrayOfStrings(commands)) {
-          return cwds.map((cwd, cwdIndex) => {
-            const cwdDirname = nodePath.basename(cwd)
-            const prefix = Array.isArray(names) ? names[cwdIndex] : names === true ? cwdDirname : undefined
-            return { ...rest, command, cwd, prefix }
-          })
-        } else {
-          return cwds.flatMap((cwd, cwdIndex) =>
-            commands.map((command, commandIndex) => {
-              const optionIndex = cwdIndex * commands.length + commandIndex
-              const cwdDirname = nodePath.basename(cwd)
-              const prefixSuffix = commands.length ? `.${commandIndex}` : ''
-              const prefix = Array.isArray(names)
-                ? names[optionIndex]
-                : names === true
-                  ? `${cwdDirname}${prefixSuffix}`
-                  : undefined
-              return { ...rest, command, cwd, prefix }
-            }),
-          )
-        }
-      }
-    })()
+    const manyOptions = Exec0.normalizeManyOptions(args)
+    const execOneOptions = this.manyOptionsToOneOptions(manyOptions)
+    const { parallel, fixPrefixesLength = this.fixPrefixesLength } = manyOptions
 
     const prefixes = execOneOptions.map((options) => options.prefix)
     if (typeof prefixes[0] === 'string' && fixPrefixesLength) {
