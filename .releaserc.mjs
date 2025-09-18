@@ -11,7 +11,7 @@ export default {
           '@semantic-release/commit-analyzer',
           {
             preset: 'conventionalcommits',
-            releaseRules: [{ release: 'patch' }],
+            releaseRules: [{ type: '*', release: 'patch' }],
           },
         ]
       : '@semantic-release/commit-analyzer',
