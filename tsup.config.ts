@@ -1,10 +1,11 @@
 import { defineConfig, type Options } from 'tsup'
 
 const general = {
-  outDir: 'dist',
+  entry: ['src', '!src/**/*.test.*'],
+  clean: true,
   dts: true,
-  splitting: false,
   sourcemap: true,
+  splitting: false,
   minify: false,
   target: 'es2022',
   external: ['bun:test'],
@@ -17,13 +18,13 @@ const general = {
 export default defineConfig([
   {
     ...general,
-    clean: true,
-    entry: ['src', '!src/**/*.test.*'],
-    format: ['esm', 'cjs'],
-    outExtension({ format }) {
-      return {
-        js: format === 'cjs' ? '.cjs' : '.js',
-      }
-    },
+    format: 'esm',
+    outDir: 'dist/esm',
+  },
+  {
+    ...general,
+    format: 'cjs',
+    outExtension: () => ({ js: '.js' }),
+    outDir: 'dist/cjs',
   },
 ])
