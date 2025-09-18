@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { File0, Fs0 } from './index'
+import { File0, Fs0 } from './index.js'
 
 describe('Fs0', () => {
   const testDir = join(__dirname, 'test-temp')
