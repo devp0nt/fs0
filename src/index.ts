@@ -1036,6 +1036,13 @@ export class File0 {
     return await this.fs0.isExists(this.path.abs)
   }
 
+  rmSync() {
+    return this.fs0.rmSync(this.path.abs)
+  }
+  async rm() {
+    return await this.fs0.rm(this.path.abs)
+  }
+
   writeSync(content: string, format: boolean = false) {
     return this.fs0.writeFileSync(this.path.abs, content, format)
   }
