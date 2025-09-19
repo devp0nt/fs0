@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import omit from 'lodash/omit.js'
 import { File0, Fs0 } from './index.js'
 
 describe('Fs0', () => {
@@ -91,7 +92,7 @@ describe('Fs0', () => {
     expect(parsed.basename).toBe('test-file')
     expect(parsed.ext).toBe('ts')
     expect(parsed.extDotted).toBe('.ts')
-    expect(parsed.dirname).toBe('subdir')
+    expect(parsed.dirnameOriginal).toBe('subdir')
   })
 
   it('should handle string matching', () => {
@@ -112,6 +113,30 @@ describe('Fs0', () => {
     expect(Fs0.isStringMatch(testString2, '*')).toBe(false)
     const testString3 = `// @gen0:start print('const y = 2'); print('const z = 3');`
     expect(Fs0.isStringMatch(testString3, /@gen0:start/)).toBe(true)
+  })
+
+  it('should normally extend files', () => {
+    const fs0 = Fs0.create({ cwd: testDir })
+    const file0 = fs0.createFile0('dir/test.txt')
+    const path = omit(file0.path, ['abs', 'dirAbs', 'dir'])
+    expect(path).toMatchInlineSnapshot(`
+      {
+        "basename": "test",
+        "dirOriginal": "dir",
+        "dirRel": "dir",
+        "dirRelDotted": "./dir",
+        "dirname": "dir",
+        "dirnameAbs": "dir",
+        "dirnameOriginal": "dir",
+        "dirnameRel": "dir",
+        "ext": "txt",
+        "extDotted": ".txt",
+        "name": "test.txt",
+        "original": "dir/test.txt",
+        "rel": "dir/test.txt",
+        "relDotted": "./dir/test.txt",
+      }
+    `)
   })
 })
 
@@ -164,7 +189,7 @@ describe('File0', () => {
     expect(file.path.basename).toBe('test')
     expect(file.path.ext).toBe('txt')
     expect(file.path.extDotted).toBe('.txt')
-    expect(file.path.dirname).toBe('subdir')
+    expect(file.path.dirnameOriginal).toBe('subdir')
   })
 
   it('should check file existence', async () => {

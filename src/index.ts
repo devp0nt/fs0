@@ -300,18 +300,25 @@ export class Fs0 {
   parsePath(path: string, relativeTo: string = this.rootDir) {
     const original = path
     const abs = this.toAbs(path)
-    const rel = this.toRel(path, relativeTo, false)
-    const relDotted = this.toRel(path, relativeTo, true)
+    const rel = this.toRel(abs, relativeTo, false)
+    const relDotted = this.toRel(abs, relativeTo, true)
+
     const extDotted = nodePath.extname(path)
     const ext = extDotted.replace(/^\./, '')
     const name = nodePath.basename(path)
     const basename = nodePath.basename(path, extDotted)
-    const dir = nodePath.dirname(path)
-    const dirname = nodePath.basename(dir)
-    const dirRel = this.toRel(dir, relativeTo, false)
-    const dirnameRel = nodePath.basename(dirRel)
-    const dirAbs = this.toAbs(dir)
+
+    const dirAbs = nodePath.dirname(abs)
     const dirnameAbs = nodePath.basename(dirAbs)
+    const dirOriginal = nodePath.dirname(path)
+    const dirnameOriginal = nodePath.basename(dirOriginal)
+    const dirRel = this.toRel(dirAbs, relativeTo, false)
+    const dirRelDotted = this.toRel(dirAbs, relativeTo, true)
+    const dirnameRel = nodePath.basename(dirRel)
+
+    const dirname = dirnameAbs
+    const dir = dirAbs
+
     return {
       original,
       abs,
@@ -321,12 +328,15 @@ export class Fs0 {
       ext,
       extDotted,
       basename,
-      dir,
-      dirname,
+      dirOriginal,
+      dirnameOriginal,
       dirRel,
+      dirRelDotted,
       dirnameRel,
       dirAbs,
       dirnameAbs,
+      dirname,
+      dir,
     }
   }
 
