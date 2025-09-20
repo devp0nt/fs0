@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import CommentJson from 'comment-json'
 import omit from 'lodash/omit.js'
 import { File0, Fs0 } from './index.js'
 
@@ -256,5 +257,24 @@ describe(`Integration Tests`, () => {
     const found = await fs.findUp('package.json')
     expect(found).toBeTruthy()
     expect(found).toContain('package.json')
+  })
+
+  it('shoudl sort json sort', () => {
+    const json = Fs0.sortJson(
+      { name: 'test', version: '1.0.0', deps: { a: '18.0.0', c: '19.0.0', b: '19.0.0' }, missing: 'missing' },
+      ['version', { key: 'deps', sort: ['c', 'b', 'a'] }, 'name'],
+    )
+    expect(CommentJson.stringify(json, null, 2)).toMatchInlineSnapshot(`
+      "{
+        "version": "1.0.0",
+        "deps": {
+          "c": "19.0.0",
+          "b": "19.0.0",
+          "a": "18.0.0"
+        },
+        "name": "test",
+        "missing": "missing"
+      }"
+    `)
   })
 })
